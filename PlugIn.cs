@@ -6,9 +6,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Hspi
 {
+    using Hspi.Voice;
     using static System.FormattableString;
 
     /// <summary>
@@ -117,10 +120,28 @@ namespace Hspi
                 }
             }
 
+            if (chromecastDevices.Count > 0)
+            {
+                Task speakTask = Speak(text, chromecastDevices.Values);
+
+                if (wait)
+                {
+                    speakTask.Wait(ShutdownCancellationToken);
+                }
+            }
+
             if (pluginConfig.ForwardSpeach)
             {
                 HS.SpeakProxy(deviceId, text, wait, host);
             }
+        }
+
+        private async Task Speak(string text, IEnumerable<ChromecastDevice> devices)
+        {
+            var voiceGenerator = new VoiceGenerator(text);
+            Task voiceStreamTask = voiceGenerator.GenerateVoiceBytes(ShutdownCancellationToken);
+
+            await voiceStreamTask;
         }
 
         private void RegisterConfigPage()
