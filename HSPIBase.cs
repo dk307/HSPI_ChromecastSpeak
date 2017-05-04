@@ -211,7 +211,7 @@ namespace Hspi
             this.HsClient.Disconnect();
             this.CallbackClient.Disconnect();
         }
- 
+
         public override bool SupportsAddDevice() => supportsAddDevice;
 
         public override bool SupportsConfigDevice() => supportConfigDevice;

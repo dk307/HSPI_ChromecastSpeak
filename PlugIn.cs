@@ -89,45 +89,52 @@ namespace Hspi
 
         public override void SpeakIn(int deviceId, string text, bool wait, [AllowNull]string host)
         {
-            host = (host != null) ? host.Trim() : string.Empty;
-            var hostsList = host.Split(',');
-
-            IDictionary<string, ChromecastDevice> selectedDevices = new Dictionary<string, ChromecastDevice>();
-
-            var chromecastDevices = pluginConfig.Devices;
-            foreach (var individualHost in hostsList)
+            try
             {
-                var individualHostReal = individualHost.Trim();
+                host = (host != null) ? host.Trim() : string.Empty;
+                var hostsList = host.Split(',');
 
-                if (string.IsNullOrWhiteSpace(host) || individualHostReal == "*" || individualHostReal == "*:*")
+                IDictionary<string, ChromecastDevice> selectedDevices = new Dictionary<string, ChromecastDevice>();
+
+                var chromecastDevices = pluginConfig.Devices;
+                foreach (var individualHost in hostsList)
                 {
-                    foreach (var chromecastDevice in chromecastDevices)
+                    var individualHostReal = individualHost.Trim();
+
+                    if (string.IsNullOrWhiteSpace(host) || individualHostReal == "*" || individualHostReal == "*:*")
                     {
-                        selectedDevices.Add(chromecastDevice);
-                    }
-                    break;
-                }
-                else
-                {
-                    foreach (var chromecastDevice in chromecastDevices)
-                    {
-                        string deviceName = chromecastDevice.Key;
-                        if (string.Compare(individualHostReal, deviceName, StringComparison.OrdinalIgnoreCase) == 0)
+                        foreach (var chromecastDevice in chromecastDevices)
                         {
-                            selectedDevices.Add(deviceName, chromecastDevice.Value);
+                            selectedDevices.Add(chromecastDevice);
+                        }
+                        break;
+                    }
+                    else
+                    {
+                        foreach (var chromecastDevice in chromecastDevices)
+                        {
+                            string deviceName = chromecastDevice.Key;
+                            if (string.Compare(individualHostReal, deviceName, StringComparison.OrdinalIgnoreCase) == 0)
+                            {
+                                selectedDevices.Add(deviceName, chromecastDevice.Value);
+                            }
                         }
                     }
                 }
-            }
 
-            if (chromecastDevices.Count > 0)
-            {
-                Task speakTask = Speak(text, chromecastDevices.Values);
-
-                if (wait)
+                if (chromecastDevices.Count > 0)
                 {
-                    speakTask.Wait(ShutdownCancellationToken);
+                    Task speakTask = Speak(text, chromecastDevices.Values);
+
+                    if (wait)
+                    {
+                        speakTask.Wait(ShutdownCancellationToken);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                LogWarning(Invariant($"Failed to Speak  With {ex.Message}"));
             }
 
             if (pluginConfig.ForwardSpeach)
