@@ -16,7 +16,7 @@ namespace Hspi.Voice
             promptBuilder.AppendText(text);
         }
 
-        public async Task<MemoryStream> GenerateVoiceBytes(CancellationToken token)
+        public async Task<MemoryStream> GenerateVoiceAsWavFile(CancellationToken token)
         {
             var audioFormat = new SpeechAudioFormatInfo(16000, AudioBitsPerSample.Eight, AudioChannel.Mono);
 

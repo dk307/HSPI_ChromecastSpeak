@@ -8,10 +8,12 @@ using System.Text;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Hspi
 {
     using Hspi.Voice;
+    using Hspi.Web;
     using static System.FormattableString;
 
     /// <summary>
@@ -33,11 +35,14 @@ namespace Hspi
             {
                 pluginConfig = new PluginConfig(HS);
                 configPage = new ConfigPage(HS, pluginConfig);
+                webServerManager = new MediaWebServerManager(ShutdownCancellationToken);
                 LogInfo("Starting Plugin");
 #if DEBUG
                 pluginConfig.DebugLogging = true;
 #endif
                 pluginConfig.ConfigChanged += PluginConfig_ConfigChanged;
+
+                Task.Factory.StartNew(() => webServerManager.StartupServer(HS.GetIPAddress(), pluginConfig.WebServerPort));
 
                 RegisterConfigPage();
 
@@ -56,7 +61,6 @@ namespace Hspi
 
         private void PluginConfig_ConfigChanged(object sender, EventArgs e)
         {
-            // RestartMPowerConnections();
         }
 
         public override void DebugLog(string message)
@@ -146,9 +150,9 @@ namespace Hspi
         private async Task Speak(string text, IEnumerable<ChromecastDevice> devices)
         {
             var voiceGenerator = new VoiceGenerator(text);
-            Task voiceStreamTask = voiceGenerator.GenerateVoiceBytes(ShutdownCancellationToken);
-
-            await voiceStreamTask;
+            Task<MemoryStream> voiceStreamTask = voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken);
+            var audioMemoryStream = await voiceStreamTask;
+            var path = await webServerManager.Add(audioMemoryStream.ToArray(), "wav");
         }
 
         private void RegisterConfigPage()
@@ -189,12 +193,18 @@ namespace Hspi
                     pluginConfig.Dispose();
                 }
 
+                if (webServerManager != null)
+                {
+                    webServerManager.Dispose();
+                }
+
                 disposedValue = true;
             }
 
             base.Dispose(disposing);
         }
 
+        private MediaWebServerManager webServerManager;
         private ConfigPage configPage;
         private PluginConfig pluginConfig;
         private bool disposedValue = false;

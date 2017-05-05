@@ -30,6 +30,7 @@ namespace Hspi
 
             debugLogging = GetValue(DebugLoggingKey, false);
             forwardSpeech = GetValue(ForwardSpeechKey, true);
+            webServerPort = GetValue(WebServerPortKey, 8081);
             string deviceIdsConcatString = GetValue(DeviceIds, string.Empty);
             var deviceIds = deviceIdsConcatString.Split(DeviceIdsSeparator);
 
@@ -127,6 +128,36 @@ namespace Hspi
                 {
                     SetValue(ForwardSpeechKey, value);
                     forwardSpeech = value;
+                }
+                finally
+                {
+                    configLock.ExitWriteLock();
+                }
+            }
+        }
+
+        public int WebServerPort
+        {
+            get
+            {
+                configLock.EnterReadLock();
+                try
+                {
+                    return webServerPort;
+                }
+                finally
+                {
+                    configLock.ExitReadLock();
+                }
+            }
+
+            set
+            {
+                configLock.EnterWriteLock();
+                try
+                {
+                    SetValue(WebServerPortKey, value);
+                    webServerPort = value;
                 }
                 finally
                 {
@@ -246,6 +277,7 @@ namespace Hspi
         private const string DeviceIds = "DevicesIds";
         private const string DebugLoggingKey = "DebugLogging";
         private const string ForwardSpeechKey = "FowardSpeech";
+        private const string WebServerPortKey = "WebServerPort";
         private readonly static string FileName = Invariant($"{Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location)}.ini");
         private const string IPAddressKey = "IPAddress";
         private const string DefaultSection = "Settings";
@@ -254,8 +286,9 @@ namespace Hspi
 
         private readonly Dictionary<string, ChromecastDevice> devices = new Dictionary<string, ChromecastDevice>();
         private readonly IHSApplication HS;
-        private bool debugLogging = false;
-        private bool forwardSpeech = true;
+        private int webServerPort;
+        private bool debugLogging;
+        private bool forwardSpeech;
         private bool disposedValue = false;
         private readonly ReaderWriterLockSlim configLock = new ReaderWriterLockSlim();
     };
