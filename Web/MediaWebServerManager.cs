@@ -11,8 +11,9 @@ namespace Hspi.Web
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class MediaWebServerManager : IDisposable
     {
-        public MediaWebServerManager(CancellationToken shutdownCancellationToken)
+        public MediaWebServerManager(ILogger logger, CancellationToken shutdownCancellationToken)
         {
+            this.logger = logger;
             ShutdownCancellationToken = shutdownCancellationToken;
         }
 
@@ -21,6 +22,10 @@ namespace Hspi.Web
             await webServerLock.WaitAsync(ShutdownCancellationToken).ConfigureAwait(false);
             try
             {
+                if (webServer != null)
+                {
+                    logger.DebugLog("Stopping old webserver if running.");
+                }
                 // Stop any existing server
                 webServerTokenSource?.Cancel();
                 webServerTask?.Wait(ShutdownCancellationToken);
@@ -32,6 +37,8 @@ namespace Hspi.Web
                 combinedWebServerTokenSource = CancellationTokenSource.CreateLinkedTokenSource(webServerTokenSource.Token, ShutdownCancellationToken);
 
                 webServer = new MediaWebServer(address, port);
+                logger.LogInfo(Invariant($"Starting Web Server on {address}:{port}"));
+
                 webServerTask = webServer.StartListening(combinedWebServerTokenSource.Token);
                 Port = port;
             }
@@ -41,7 +48,7 @@ namespace Hspi.Web
             }
         }
 
-        public async Task<string> Add(byte[] buffer, string extension)
+        public async Task<Uri> Add(byte[] buffer, string extension)
         {
             // This lock allows us to wait till server has started
             await webServerLock.WaitAsync(ShutdownCancellationToken);
@@ -52,9 +59,14 @@ namespace Hspi.Web
                     throw new HspiException("Server is not running.");
                 }
                 string path = Invariant($"path{pathNumber}.{extension}");
+                logger.DebugLog(Invariant($"Adding {path} to Web Server with {buffer.Length} Audio bytes"));
+
                 pathNumber++;
                 webServer.Add(buffer, DateTimeOffset.Now, path, DateTimeOffset.Now.Add(FileEntryExpiry));
-                return extension;
+
+                UriBuilder builder = new UriBuilder(webServer.UrlPrefix);
+                builder.Path = path;
+                return builder.Uri;
             }
             finally
             {
@@ -72,6 +84,7 @@ namespace Hspi.Web
         private CancellationTokenSource webServerTokenSource;
         private CancellationTokenSource combinedWebServerTokenSource;
         private int pathNumber = 0;
+        private readonly ILogger logger;
 
         #region IDisposable Support
 

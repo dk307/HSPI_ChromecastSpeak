@@ -9,11 +9,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
+using Hspi.Voice;
+using Hspi.Web;
 
 namespace Hspi
 {
-    using Hspi.Voice;
-    using Hspi.Web;
+    using Hspi.Chromecast;
     using static System.FormattableString;
 
     /// <summary>
@@ -21,7 +22,7 @@ namespace Hspi
     /// </summary>
     /// <seealso cref="Hspi.HspiBase" />
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class Plugin : HspiBase
+    internal class Plugin : HspiBase, ILogger
     {
         public Plugin()
             : base(PluginData.PlugInName, supportConfigDevice: true)
@@ -35,7 +36,7 @@ namespace Hspi
             {
                 pluginConfig = new PluginConfig(HS);
                 configPage = new ConfigPage(HS, pluginConfig);
-                webServerManager = new MediaWebServerManager(ShutdownCancellationToken);
+                webServerManager = new MediaWebServerManager(this, ShutdownCancellationToken);
                 LogInfo("Starting Plugin");
 #if DEBUG
                 pluginConfig.DebugLogging = true;
@@ -149,10 +150,19 @@ namespace Hspi
 
         private async Task Speak(string text, IEnumerable<ChromecastDevice> devices)
         {
-            var voiceGenerator = new VoiceGenerator(text);
+            var voiceGenerator = new VoiceGenerator(this, text);
             Task<MemoryStream> voiceStreamTask = voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken);
             var audioMemoryStream = await voiceStreamTask;
-            var path = await webServerManager.Add(audioMemoryStream.ToArray(), "wav");
+            var uri = await webServerManager.Add(audioMemoryStream.ToArray(), "wav");
+
+            List<Task> playTasks = new List<Task>();
+            foreach (var device in devices)
+            {
+                SimpleChromecast chromecast = new SimpleChromecast(this, device);
+                playTasks.Add(chromecast.Play(uri, ShutdownCancellationToken));
+            }
+
+            Task.WaitAll(playTasks.ToArray());
         }
 
         private void RegisterConfigPage()

@@ -78,19 +78,31 @@
     <Reference Include="HSCF, Version=1.0.0.2, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Homeseer.1.0.0\lib\net45\HSCF.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="NullGuard, Version=1.5.1.0, Culture=neutral, PublicKeyToken=1958ac8092168428, processorArchitecture=MSIL">
       <HintPath>packages\NullGuard.Fody.1.5.1\lib\dotnet\NullGuard.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="protobuf-net, Version=2.1.0.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>packages\protobuf-net.2.1.0\lib\net451\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="Scheduler, Version=3.0.0.0, Culture=neutral, processorArchitecture=x86">
       <HintPath>packages\Homeseer.1.0.0\lib\net45\Scheduler.dll</HintPath>
+    </Reference>
+    <Reference Include="Sockets.Plugin, Version=2.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\Sharpcaster.SocketsForPCL.2.0.4\lib\net45\Sockets.Plugin.dll</HintPath>
+    </Reference>
+    <Reference Include="Sockets.Plugin.Abstractions, Version=2.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\Sharpcaster.SocketsForPCL.2.0.4\lib\net45\Sockets.Plugin.Abstractions.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Drawing" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Runtime.Caching" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Speech" />
     <Reference Include="System.Web" />
@@ -107,6 +119,7 @@
     <Compile Include="ConfigPage.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />
+    <Compile Include="ILogger.cs" />
     <Compile Include="PlugIn.cs" />
     <Compile Include="PluginConfig.cs" />
     <Compile Include="PluginData.cs" />
@@ -116,6 +129,53 @@
     <Compile Include="HSPIBase.cs" />
     <Compile Include="IPlugInAPI2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SharpCaster\Channels\ChromecastChannel.cs" />
+    <Compile Include="SharpCaster\Channels\ConnectionChannel.cs" />
+    <Compile Include="SharpCaster\Channels\HeartbeatChannel.cs" />
+    <Compile Include="SharpCaster\Channels\IChromecastChannel.cs" />
+    <Compile Include="SharpCaster\Channels\MediaChannel.cs" />
+    <Compile Include="SharpCaster\Channels\ReceiverChannel.cs" />
+    <Compile Include="SharpCaster\ChromeCastClient.cs" />
+    <Compile Include="SharpCaster\Extensions\ByteArrayExtension.cs" />
+    <Compile Include="SharpCaster\Extensions\StreamExtension.cs" />
+    <Compile Include="SharpCaster\JsonConverters\IdleReasonEnumConverter.cs" />
+    <Compile Include="SharpCaster\JsonConverters\MetadataTypeConverter.cs" />
+    <Compile Include="SharpCaster\JsonConverters\MetadataTypeEnumConverter.cs" />
+    <Compile Include="SharpCaster\JsonConverters\PlayerStateEnumConverter.cs" />
+    <Compile Include="SharpCaster\Models\CastMessage.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\ConnectRequest.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\GetStatusRequest.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\LaunchRequest.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\LoadRequest.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\MediaData.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\PingRequest.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\PongRequest.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\Request.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\RequestIdProvider.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\RequestWithId.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastSSLClientDataReceivedArgs.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastStatus\ChromecastApplication.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastStatus\ChromecastStatus.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastStatus\ChromecastStatusResponse.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastStatus\Namespace.cs" />
+    <Compile Include="SharpCaster\Models\Enums\MetadataTypeEnum.cs" />
+    <Compile Include="SharpCaster\Models\MediaStatus\ChromecastImage.cs" />
+    <Compile Include="SharpCaster\Models\MediaStatus\Item.cs" />
+    <Compile Include="SharpCaster\Models\MediaStatus\Media.cs" />
+    <Compile Include="SharpCaster\Models\MediaStatus\MediaStatus.cs" />
+    <Compile Include="SharpCaster\Models\MediaStatus\MediaStatusResponse.cs" />
+    <Compile Include="SharpCaster\Models\MediaStatus\Track.cs" />
+    <Compile Include="SharpCaster\Models\MessageFactory.cs" />
+    <Compile Include="SharpCaster\Models\Metadata\GenericMediaMetadata.cs" />
+    <Compile Include="SharpCaster\Models\Metadata\IMetadata.cs" />
+    <Compile Include="SharpCaster\Models\Metadata\MovieMediaMetadata.cs" />
+    <Compile Include="SharpCaster\Models\Metadata\MusicTrackMediaMetadata.cs" />
+    <Compile Include="SharpCaster\Models\Metadata\PhotoMediaMetadata.cs" />
+    <Compile Include="SharpCaster\Models\Metadata\TvShowMediaMetadata.cs" />
+    <Compile Include="SharpCaster\Models\Volume.cs" />
+    <Compile Include="SharpCaster\Services\ChromecastSocketService.cs" />
+    <Compile Include="SharpCaster\Services\ChromecastTcpClient.cs" />
+    <Compile Include="SimpleChromecast.cs" />
     <Compile Include="Voice\VoiceGenerator.cs" />
     <Compile Include="Web\InMemoryFileSystemModule.cs" />
     <Compile Include="Web\MediaWebServer.cs" />
