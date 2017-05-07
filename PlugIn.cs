@@ -151,15 +151,14 @@ namespace Hspi
         private async Task Speak(string text, IEnumerable<ChromecastDevice> devices)
         {
             var voiceGenerator = new VoiceGenerator(this, text);
-            Task<MemoryStream> voiceStreamTask = voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken);
-            var audioMemoryStream = await voiceStreamTask;
-            var uri = await webServerManager.Add(audioMemoryStream.ToArray(), "wav");
+            var voiceData = await voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken);
+            var uri = await webServerManager.Add(voiceData.Data, voiceData.Extension);
 
             List<Task> playTasks = new List<Task>();
             foreach (var device in devices)
             {
                 SimpleChromecast chromecast = new SimpleChromecast(this, device);
-                playTasks.Add(chromecast.Play(uri, ShutdownCancellationToken));
+                playTasks.Add(chromecast.Play(uri, voiceData.MimeType, voiceData.Duration, ShutdownCancellationToken));
             }
 
             Task.WaitAll(playTasks.ToArray());

@@ -169,6 +169,7 @@
     <Compile Include="SharpCaster\Services\ChromecastSocketService.cs" />
     <Compile Include="SharpCaster\Services\ChromecastTcpClient.cs" />
     <Compile Include="SimpleChromecast.cs" />
+    <Compile Include="Voice\VoiceData.cs" />
     <Compile Include="Voice\VoiceGenerator.cs" />
     <Compile Include="Web\InMemoryFileSystemModule.cs" />
     <Compile Include="Web\MediaWebServer.cs" />

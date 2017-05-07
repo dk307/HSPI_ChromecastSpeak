@@ -24,7 +24,7 @@ namespace Hspi.Chromecast
             this.logger = logger;
         }
 
-        public async Task Play(Uri playUri, CancellationToken cancellationToken)
+        public async Task Play(Uri playUri, string mimeType, double duration, CancellationToken cancellationToken)
         {
             logger.DebugLog(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
             if (!Uri.TryCreate(Invariant($"https://{device.DeviceIP}/"), UriKind.Absolute, out Uri myUri))
@@ -63,7 +63,7 @@ namespace Hspi.Chromecast
                 logger.DebugLog(Invariant($"Launched default app on Chromecast {device.Name}"));
 
                 logger.DebugLog(Invariant($"Loading Media in on Chromecast {device.Name}"));
-                await client.MediaChannel.LoadMedia(defaultApplication, playUri, "audio/wav", cancellationToken);
+                await client.MediaChannel.LoadMedia(defaultApplication, playUri, mimeType, cancellationToken, duration: duration);
                 logger.DebugLog(Invariant($"Loaded Media in on Chromecast {device.Name}"));
 
                 logger.DebugLog(Invariant($"Diconnecting Chromecast {device.Name}"));

@@ -14,31 +14,37 @@ namespace Hspi.Voice
         {
             this.logger = logger;
             promptBuilder = new PromptBuilder(System.Globalization.CultureInfo.CurrentCulture);
-            promptBuilder.AppendText(text);
+            promptBuilder.AppendSsmlMarkup(text);
         }
 
-        public async Task<MemoryStream> GenerateVoiceAsWavFile(CancellationToken token)
+        public async Task<VoiceData> GenerateVoiceAsWavFile(CancellationToken token)
         {
             logger.DebugLog("Starting Generation of Wav using SAPI");
             var audioFormat = new SpeechAudioFormatInfo(16000, AudioBitsPerSample.Eight, AudioChannel.Mono);
 
             using (var speechSynthesizer = new SpeechSynthesizer())
             {
-                MemoryStream streamAudio = new MemoryStream();
-                speechSynthesizer.SetOutputToWaveStream(streamAudio);
-
-                TaskCompletionSource<bool> finished = new TaskCompletionSource<bool>(token);
-                speechSynthesizer.SpeakCompleted += (object sender, SpeakCompletedEventArgs e) =>
+                using (MemoryStream streamAudio = new MemoryStream())
                 {
-                    finished.SetResult(true);
-                };
-                speechSynthesizer.SpeakAsync(this.promptBuilder);
-                await finished.Task.ConfigureAwait(false);
-                speechSynthesizer.SetOutputToNull();
+                    SpeakProgressEventArgs progressEvents = null;
+                    speechSynthesizer.SetOutputToWaveStream(streamAudio);
+                    speechSynthesizer.SpeakProgress += (sender, e) => { progressEvents = e; };
 
-                logger.DebugLog("Finished Generation of Wav using SAPI");
+                    TaskCompletionSource<bool> finished = new TaskCompletionSource<bool>(token);
+                    speechSynthesizer.SpeakCompleted += (object sender, SpeakCompletedEventArgs e) =>
+                    {
+                        finished.SetResult(true);
+                    };
+                    token.Register(() => speechSynthesizer.SpeakAsyncCancelAll());
+                    speechSynthesizer.SpeakAsync(this.promptBuilder);
+                    await finished.Task.ConfigureAwait(false);
+                    speechSynthesizer.SetOutputToNull();
 
-                return streamAudio;
+                    logger.DebugLog("Finished Generation of Wav using SAPI");
+
+                    return new VoiceData(streamAudio.ToArray(), "audio/wav", "wav",
+                                         progressEvents != null ? progressEvents.AudioPosition.TotalSeconds : 0D);
+                }
             }
         }
 
