@@ -12,7 +12,7 @@ using SharpCaster.Models.ChromecastStatus;
 
 namespace SharpCaster.Channels
 {
-    public class MediaChannel : ChromecastChannel
+    internal class MediaChannel : ChromecastChannel
     {
         public MediaChannel(ChromeCastClient client)
             : base(client, "urn:x-cast:com.google.cast.media")
@@ -53,7 +53,7 @@ namespace SharpCaster.Channels
 
         public async Task LoadMedia(
             ChromecastApplication application,
-            string mediaUrl,
+            Uri mediaUrl,
             string contentType /*= "application/vnd.ms-sstr+xml"*/,
             CancellationToken token,
             IMetadata metadata = null,
@@ -66,7 +66,7 @@ namespace SharpCaster.Channels
             double currentTime = 0D)
         {
             int requestId = RequestIdProvider.Next;
-            var mediaObject = new MediaData(mediaUrl, contentType, metadata, streamType, duration, customData, tracks);
+            var mediaObject = new MediaData(mediaUrl.ToString(), contentType, metadata, streamType, duration, customData, tracks);
             var req = new LoadRequest(requestId, application.SessionId, mediaObject, autoPlay, currentTime,
                                       customData, activeTrackIds);
 

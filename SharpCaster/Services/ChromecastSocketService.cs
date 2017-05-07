@@ -7,7 +7,7 @@ using System.Net.Sockets;
 
 namespace SharpCaster.Services
 {
-    public class ChromecastSocketService : IDisposable
+    internal class ChromecastSocketService : IDisposable
     {
         public async Task Connect(string host, int port,
             ConnectionChannel connectionChannel,
@@ -98,6 +98,7 @@ namespace SharpCaster.Services
                     combinedStopTokenSource?.Dispose();
                     runTask.Dispose();
                     client?.Dispose();
+                    clientWriteLock.Dispose();
                 }
 
                 disposedValue = true;

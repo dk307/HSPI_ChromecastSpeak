@@ -15,36 +15,8 @@ using SharpCaster.Models.MediaStatus;
 
 namespace SharpCaster
 {
-    public class ChromeCastClient : IDisposable
+    internal class ChromeCastClient : IDisposable
     {
-        public ChromecastStatus ChromecastStatus
-        {
-            get
-            {
-                return _chromecastStatus;
-            }
-            set
-            {
-                _chromecastStatus = value;
-            }
-        }
-
-        private ChromecastStatus _chromecastStatus;
-
-        public MediaStatus MediaStatus
-        {
-            get
-            {
-                return _mediaStatus;
-            }
-            set
-            {
-                _mediaStatus = value;
-            }
-        }
-
-        private MediaStatus _mediaStatus;
-
         public bool Connected
         {
             get { return _connected; }
@@ -59,22 +31,17 @@ namespace SharpCaster
 
         internal ChromecastSocketService ChromecastSocketService { get; set; }
 
-        public ConnectionChannel ConnectionChannel;
-        public MediaChannel MediaChannel;
-        public HeartbeatChannel HeartbeatChannel;
-        public ReceiverChannel ReceiverChannel;
-        private const int ChromecastPort = 8009;
-        public string ChromecastApplicationId;
+        public ChromecastStatus ChromecastStatus { get; set; }
+        public MediaStatus MediaStatus { get; set; }
+        public ConnectionChannel ConnectionChannel { get; }
+        public MediaChannel MediaChannel { get; }
+        public HeartbeatChannel HeartbeatChannel { get; }
+        public ReceiverChannel ReceiverChannel { get; }
 
         public event EventHandler ConnectedChanged;
 
-        //public event EventHandler<ChromecastApplication> ApplicationStarted;
-
-        //public event EventHandler<MediaStatus> MediaStatusChanged;
-
-        //public event EventHandler<ChromecastStatus> ChromecastStatusChanged;
-
-        public List<ChromecastChannel> Channels;
+        private const int ChromecastPort = 8009;
+        private IList<ChromecastChannel> Channels;
 
         public ChromeCastClient()
         {
@@ -114,7 +81,18 @@ namespace SharpCaster
                 }
                 else
                 {
-                    entireMessage = stream.ParseData();
+                    var sizeBuffer = new byte[4];
+                    byte[] messageBuffer = { };
+                    // First message should contain the size of message
+                    await stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, token);
+                    // The message is little-endian (that is, little end first),
+                    // reverse the byte array.
+                    Array.Reverse(sizeBuffer);
+                    //Retrieve the size of message
+                    var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
+                    messageBuffer = new byte[messageSize];
+                    await stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, token);
+                    entireMessage = messageBuffer;
                 }
 
                 var entireMessageArray = entireMessage.ToArray();
@@ -163,6 +141,7 @@ namespace SharpCaster
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         #endregion IDisposable Support

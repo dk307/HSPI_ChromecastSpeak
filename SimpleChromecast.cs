@@ -63,7 +63,7 @@ namespace Hspi.Chromecast
                 logger.DebugLog(Invariant($"Launched default app on Chromecast {device.Name}"));
 
                 logger.DebugLog(Invariant($"Loading Media in on Chromecast {device.Name}"));
-                await client.MediaChannel.LoadMedia(defaultApplication, playUri.ToString(), "audio/wav", cancellationToken);
+                await client.MediaChannel.LoadMedia(defaultApplication, playUri, "audio/wav", cancellationToken);
                 logger.DebugLog(Invariant($"Loaded Media in on Chromecast {device.Name}"));
 
                 logger.DebugLog(Invariant($"Diconnecting Chromecast {device.Name}"));

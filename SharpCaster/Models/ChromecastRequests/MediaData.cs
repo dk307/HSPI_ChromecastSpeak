@@ -5,7 +5,7 @@ using SharpCaster.Models.Metadata;
 namespace SharpCaster.Models.ChromecastRequests
 {
     [DataContract]
-    public class MediaData
+    internal class MediaData
     {
         public MediaData(string url, string contentType, IMetadata metadata = null,
                          string streamType = "BUFFERED", double duration = 0d,

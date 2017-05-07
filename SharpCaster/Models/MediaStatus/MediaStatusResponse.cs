@@ -1,8 +1,8 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace SharpCaster.Models.MediaStatus
 {
-    public class MediaStatusResponse
+    internal class MediaStatusResponse
     {
         public string type { get; set; }
         public List<MediaStatus> status { get; set; }

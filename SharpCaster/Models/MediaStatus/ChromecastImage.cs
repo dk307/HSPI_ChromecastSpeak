@@ -2,7 +2,7 @@
 
 namespace SharpCaster.Models.MediaStatus
 {
-    public class ChromecastImage
+    internal class ChromecastImage
     {
         public Uri url { get; set; }
         public int height { get; set; }

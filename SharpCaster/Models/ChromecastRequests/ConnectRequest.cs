@@ -1,9 +1,9 @@
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
 namespace SharpCaster.Models.ChromecastRequests
 {
     [DataContract]
-    public class ConnectRequest : Request
+    internal class ConnectRequest : Request
     {
         public ConnectRequest()
             : base("CONNECT")

@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace SharpCaster.Channels
 {
-    public abstract class ChromecastChannel
+    internal abstract class ChromecastChannel
     {
         protected ChromeCastClient Client { get; }
         public string Namespace { get; }

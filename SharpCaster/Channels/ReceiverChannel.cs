@@ -10,7 +10,7 @@ using System.Collections.Concurrent;
 
 namespace SharpCaster.Channels
 {
-    public class ReceiverChannel : ChromecastChannel
+    internal class ReceiverChannel : ChromecastChannel
     {
         public ReceiverChannel(ChromeCastClient client) :
             base(client, "urn:x-cast:com.google.cast.receiver")

@@ -7,7 +7,7 @@ using SharpCaster.Models.MediaStatus;
 namespace SharpCaster.Models.Metadata
 {
     //Fields: https://developers.google.com/cast/docs/reference/chrome/chrome.cast.media.TvShowMediaMetadata
-    public class TvShowMediaMetadata : IMetadata
+    internal class TvShowMediaMetadata : IMetadata
     {
         public TvShowMediaMetadata()
         {

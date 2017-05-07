@@ -3,7 +3,7 @@
 namespace SharpCaster.Models.ChromecastRequests
 {
     [DataContract]
-    public class LoadRequest : RequestWithId
+    internal class LoadRequest : RequestWithId
     {
         public LoadRequest(int requestId, string sessionId, MediaData media, bool autoPlay, double currentTime,
             object customData = null, int[] activeTrackIds = null)

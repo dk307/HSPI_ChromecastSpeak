@@ -3,7 +3,7 @@ using SharpCaster.Models.ChromecastRequests;
 
 namespace SharpCaster.Models
 {
-    public static class MessageFactory
+    internal static class MessageFactory
     {
         private static readonly string UniqueSourceID = "client-" + new Random((int)DateTime.Now.Ticks).Next() % 9999;
 
@@ -37,10 +37,10 @@ namespace SharpCaster.Models
             PayloadUtf8 = new PingRequest().ToJson()
         };
 
-        public static CastMessage Pong() => new CastMessage
-        {
-            PayloadUtf8 = new PongRequest().ToJson()
-        };
+        //public static CastMessage Pong() => new CastMessage
+        //{
+        //    PayloadUtf8 = new PongRequest().ToJson()
+        //};
 
         public static CastMessage Status(int requestId) => new CastMessage
         {

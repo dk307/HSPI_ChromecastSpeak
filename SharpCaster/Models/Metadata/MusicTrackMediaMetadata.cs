@@ -7,7 +7,7 @@ using SharpCaster.Models.MediaStatus;
 namespace SharpCaster.Models.Metadata
 {
     //Fields: https://developers.google.com/cast/docs/reference/chrome/chrome.cast.media.MusicTrackMediaMetadata
-    public class MusicTrackMediaMetadata : IMetadata
+    internal class MusicTrackMediaMetadata : IMetadata
     {
         public MusicTrackMediaMetadata()
         {

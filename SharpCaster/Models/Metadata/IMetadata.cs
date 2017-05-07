@@ -6,7 +6,7 @@ using SharpCaster.Models.MediaStatus;
 
 namespace SharpCaster.Models.Metadata
 {
-    public interface IMetadata
+    internal interface IMetadata
     {
         List<ChromecastImage> images { get; set; }
 

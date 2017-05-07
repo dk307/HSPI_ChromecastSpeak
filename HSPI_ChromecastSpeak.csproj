@@ -91,12 +91,6 @@
     <Reference Include="Scheduler, Version=3.0.0.0, Culture=neutral, processorArchitecture=x86">
       <HintPath>packages\Homeseer.1.0.0\lib\net45\Scheduler.dll</HintPath>
     </Reference>
-    <Reference Include="Sockets.Plugin, Version=2.0.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Sharpcaster.SocketsForPCL.2.0.4\lib\net45\Sockets.Plugin.dll</HintPath>
-    </Reference>
-    <Reference Include="Sockets.Plugin.Abstractions, Version=2.0.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Sharpcaster.SocketsForPCL.2.0.4\lib\net45\Sockets.Plugin.Abstractions.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
@@ -117,6 +111,7 @@
   <ItemGroup>
     <Compile Include="ChromecastDevice.cs" />
     <Compile Include="ConfigPage.cs" />
+    <Compile Include="Exceptions\ChromecastException.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />
     <Compile Include="ILogger.cs" />
@@ -137,7 +132,6 @@
     <Compile Include="SharpCaster\Channels\ReceiverChannel.cs" />
     <Compile Include="SharpCaster\ChromeCastClient.cs" />
     <Compile Include="SharpCaster\Extensions\ByteArrayExtension.cs" />
-    <Compile Include="SharpCaster\Extensions\StreamExtension.cs" />
     <Compile Include="SharpCaster\JsonConverters\IdleReasonEnumConverter.cs" />
     <Compile Include="SharpCaster\JsonConverters\MetadataTypeConverter.cs" />
     <Compile Include="SharpCaster\JsonConverters\MetadataTypeEnumConverter.cs" />
@@ -149,7 +143,6 @@
     <Compile Include="SharpCaster\Models\ChromecastRequests\LoadRequest.cs" />
     <Compile Include="SharpCaster\Models\ChromecastRequests\MediaData.cs" />
     <Compile Include="SharpCaster\Models\ChromecastRequests\PingRequest.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\PongRequest.cs" />
     <Compile Include="SharpCaster\Models\ChromecastRequests\Request.cs" />
     <Compile Include="SharpCaster\Models\ChromecastRequests\RequestIdProvider.cs" />
     <Compile Include="SharpCaster\Models\ChromecastRequests\RequestWithId.cs" />

@@ -1,10 +1,10 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 using SharpCaster.JsonConverters;
 
 namespace SharpCaster.Models.MediaStatus
 {
-    public class MediaStatus
+    internal class MediaStatus
     {
         //TODO this lowerCamelCase to UpperCamelCase could be done by serializer settings
         //TODO instead of these properties

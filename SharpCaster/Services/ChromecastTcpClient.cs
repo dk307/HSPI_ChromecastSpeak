@@ -8,14 +8,11 @@ using System.Threading.Tasks;
 
 namespace SharpCaster.Services
 {
-    public class ChromecastTcpClient
+    internal class ChromecastTcpClient : IDisposable
     {
         public ChromecastTcpClient()
         {
-            tcpClient = new TcpClient()
-            {
-                NoDelay = true,
-            };
+            tcpClient.NoDelay = true;
         }
 
         public async Task ConnectAsync(string address, int port, CancellationToken cancellationToken)
@@ -51,14 +48,14 @@ namespace SharpCaster.Services
 
             writeStream = tcpClient.GetStream();
 
-            var secureStream = new SslStream(writeStream, true, (sender, cert, chain, sslPolicy) => ServerValidationCallback(sender, cert, chain, sslPolicy));
+            var secureStream = new SslStream(writeStream, true, new RemoteCertificateValidationCallback(ValidateServerCertificate));
             secureStream.AuthenticateAsClient(address, null, System.Security.Authentication.SslProtocols.Tls, false);
             sslStream = secureStream;
         }
 
         #region Secure Sockets Details
 
-        private bool ServerValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        private static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             switch (sslPolicyErrors)
             {
@@ -132,7 +129,7 @@ namespace SharpCaster.Services
             }
         }
 
-        private readonly TcpClient tcpClient;
+        private readonly TcpClient tcpClient = new TcpClient();
         private SslStream sslStream;
         private NetworkStream writeStream;
         private bool disposed = false;

@@ -4,7 +4,7 @@ using SharpCaster.Models.Metadata;
 
 namespace SharpCaster.Models.MediaStatus
 {
-    public class Media
+    internal class Media
     {
         public string contentId { get; set; }
         public string contentType { get; set; }

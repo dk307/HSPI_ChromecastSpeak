@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace SharpCaster.Channels
 {
-    public class ConnectionChannel : ChromecastChannel
+    internal class ConnectionChannel : ChromecastChannel
     {
         public ConnectionChannel(ChromeCastClient client) :
             base(client, "urn:x-cast:com.google.cast.tp.connection")

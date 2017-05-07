@@ -1,7 +1,6 @@
 ﻿namespace SharpCaster.Models.ChromecastStatus
 {
-
-    public class Namespace
+    internal class Namespace
     {
         public string name { get; set; }
     }

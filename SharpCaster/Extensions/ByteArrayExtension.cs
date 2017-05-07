@@ -6,7 +6,7 @@ using SharpCaster.Models;
 
 namespace SharpCaster.Extensions
 {
-    public static class ByteArrayExtension
+    internal static class ByteArrayExtension
     {
         public static byte[] AddHeader(this byte[] array)
         {
@@ -18,17 +18,12 @@ namespace SharpCaster.Extensions
 
         public static CastMessage ToCastMessage(this byte[] array)
         {
-            try
+            using (var bufStream = new MemoryStream())
             {
-                Stream bufStream = new MemoryStream();
                 bufStream.Write(array, 0, array.Length);
                 bufStream.Position = 0;
                 var msg = Serializer.Deserialize<CastMessage>(bufStream);
                 return msg;
-            }
-            catch (Exception)
-            {
-                return null;
             }
         }
     }

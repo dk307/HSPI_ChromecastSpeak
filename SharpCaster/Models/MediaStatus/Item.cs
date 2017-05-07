@@ -1,6 +1,6 @@
-namespace SharpCaster.Models.MediaStatus
+﻿namespace SharpCaster.Models.MediaStatus
 {
-    public class Item
+    internal class Item
     {
         public int itemId { get; set; }
         public Media media { get; set; }

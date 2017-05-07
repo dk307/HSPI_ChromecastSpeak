@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace SharpCaster.Channels
 {
-    public class HeartbeatChannel : ChromecastChannel
+    internal class HeartbeatChannel : ChromecastChannel
     {
         public HeartbeatChannel(ChromeCastClient client) :
             base(client, "urn:x-cast:com.google.cast.tp.heartbeat")

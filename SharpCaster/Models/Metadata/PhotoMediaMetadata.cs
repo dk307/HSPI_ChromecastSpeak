@@ -7,7 +7,7 @@ using SharpCaster.Models.MediaStatus;
 namespace SharpCaster.Models.Metadata
 {
     //Fields: https://developers.google.com/cast/docs/reference/chrome/chrome.cast.media.PhotoMediaMetadata
-    public class PhotoMediaMetadata : IMetadata
+    internal class PhotoMediaMetadata : IMetadata
     {
         public PhotoMediaMetadata()
         {

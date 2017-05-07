@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace SharpCaster.Models.ChromecastStatus
 {
-    public class ChromecastStatus
+    internal class ChromecastStatus
     {
         [JsonProperty("applications")]
         public List<ChromecastApplication> Applications { get; set; }
