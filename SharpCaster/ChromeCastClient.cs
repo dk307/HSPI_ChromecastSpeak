@@ -12,9 +12,11 @@ using SharpCaster.Services;
 using System.Threading;
 
 using SharpCaster.Models.MediaStatus;
+using NullGuard;
 
 namespace SharpCaster
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class ChromeCastClient : IDisposable
     {
         public bool Connected

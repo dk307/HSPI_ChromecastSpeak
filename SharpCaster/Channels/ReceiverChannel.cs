@@ -7,9 +7,11 @@ using SharpCaster.Models.ChromecastStatus;
 using System.Threading;
 using SharpCaster.Models.ChromecastRequests;
 using System.Collections.Concurrent;
+using NullGuard;
 
 namespace SharpCaster.Channels
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class ReceiverChannel : ChromecastChannel
     {
         public ReceiverChannel(ChromeCastClient client) :

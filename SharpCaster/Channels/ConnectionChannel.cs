@@ -1,9 +1,11 @@
 ﻿using System.Threading.Tasks;
 using SharpCaster.Models;
 using System.Threading;
+using NullGuard;
 
 namespace SharpCaster.Channels
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class ConnectionChannel : ChromecastChannel
     {
         public ConnectionChannel(ChromeCastClient client) :

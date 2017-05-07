@@ -3,9 +3,11 @@ using System.IO;
 using System.Linq;
 using ProtoBuf;
 using SharpCaster.Models;
+using NullGuard;
 
 namespace SharpCaster.Extensions
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal static class ByteArrayExtension
     {
         public static byte[] AddHeader(this byte[] array)

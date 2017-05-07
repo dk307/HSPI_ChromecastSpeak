@@ -4,9 +4,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using SharpCaster.Channels;
 using System.Net.Sockets;
+using NullGuard;
 
 namespace SharpCaster.Services
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class ChromecastSocketService : IDisposable
     {
         public async Task Connect(string host, int port,

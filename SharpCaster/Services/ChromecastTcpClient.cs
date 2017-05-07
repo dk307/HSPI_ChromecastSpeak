@@ -5,9 +5,11 @@ using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using NullGuard;
 
 namespace SharpCaster.Services
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class ChromecastTcpClient : IDisposable
     {
         public ChromecastTcpClient()

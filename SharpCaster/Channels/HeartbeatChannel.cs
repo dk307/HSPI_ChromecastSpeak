@@ -3,9 +3,11 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using SharpCaster.Models;
 using System.Threading;
+using NullGuard;
 
 namespace SharpCaster.Channels
 {
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class HeartbeatChannel : ChromecastChannel
     {
         public HeartbeatChannel(ChromeCastClient client) :
