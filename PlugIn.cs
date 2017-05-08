@@ -126,7 +126,7 @@ namespace Hspi
                     }
                 }
 
-                if (chromecastDevices.Count > 0)
+                if (selectedDevices.Count > 0)
                 {
                     Task speakTask = Speak(text, chromecastDevices.Values);
 
