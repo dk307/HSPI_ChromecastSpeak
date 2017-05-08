@@ -83,8 +83,8 @@ namespace SharpCaster.Services
         {
             return Task.Run(() =>
             {
-                sslStream.Close();
-                writeStream.Close();
+                sslStream?.Close();
+                writeStream?.Close();
                 tcpClient.Close();
             });
         }

@@ -4,21 +4,20 @@ using NullGuard;
 using Scheduler.Classes;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using Hspi.Voice;
 using Hspi.Web;
+using Hspi.Chromecast;
 
 namespace Hspi
 {
-    using Hspi.Chromecast;
     using static System.FormattableString;
 
     /// <summary>
-    /// Plugin class for Weather Underground
+    /// Plugin class for Chromecast Speak
     /// </summary>
     /// <seealso cref="Hspi.HspiBase" />
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
@@ -53,7 +52,7 @@ namespace Hspi
             }
             catch (Exception ex)
             {
-                result = Invariant($"Failed to initialize PlugIn With {ex.Message}");
+                result = Invariant($"Failed to initialize PlugIn With {ex.GetFullMessage()}");
                 LogError(result);
             }
 
@@ -139,7 +138,7 @@ namespace Hspi
             }
             catch (Exception ex)
             {
-                LogWarning(Invariant($"Failed to Speak  With {ex.Message}"));
+                LogWarning(Invariant($"Failed to Speak  With {ex.GetFullMessage()}"));
             }
 
             if (pluginConfig.ForwardSpeach)
@@ -157,8 +156,13 @@ namespace Hspi
             List<Task> playTasks = new List<Task>();
             foreach (var device in devices)
             {
+                var stopTokenSource = new CancellationTokenSource();
+                var combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, ShutdownCancellationToken);
+
+                // Set a timeout for 60 seconds for speak to finish to detect hangs
+                stopTokenSource.CancelAfter(TimeSpan.FromSeconds(60));
                 SimpleChromecast chromecast = new SimpleChromecast(this, device);
-                playTasks.Add(chromecast.Play(uri, voiceData.MimeType, voiceData.Duration, ShutdownCancellationToken));
+                playTasks.Add(chromecast.Play(uri, voiceData.MimeType, voiceData.Duration, combinedStopTokenSource.Token));
             }
 
             Task.WaitAll(playTasks.ToArray());

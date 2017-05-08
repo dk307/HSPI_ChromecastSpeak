@@ -111,6 +111,7 @@
   <ItemGroup>
     <Compile Include="ChromecastDevice.cs" />
     <Compile Include="ConfigPage.cs" />
+    <Compile Include="ExceptionHelper.cs" />
     <Compile Include="Exceptions\ChromecastException.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />
