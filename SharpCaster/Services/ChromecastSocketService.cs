@@ -17,7 +17,6 @@ namespace SharpCaster.Services
             Func<Stream, bool, CancellationToken, Task> packetReader,
             CancellationToken token)
         {
-            await Task.Delay(0);
             if (client != null)
             {
                 throw new Exception("Already set");
@@ -28,10 +27,18 @@ namespace SharpCaster.Services
             CancellationToken combinedToken = combinedStopTokenSource.Token;
             await client.ConnectAsync(host, port, combinedToken);
 
+#pragma warning disable 4014
+            Task.Factory.StartNew(async (a) => { await ProcessRead(packetReader, combinedToken); },
+                                    TaskCreationOptions.RunContinuationsAsynchronously, combinedToken);
+#pragma warning restore 4014
+
             connectionChannel.OpenConnection(combinedStopTokenSource.Token);
             heartbeatChannel.StartHeartbeat(combinedStopTokenSource.Token);
+        }
 
-            runTask = Task.Factory.StartNew(async () =>
+        private async Task ProcessRead(Func<Stream, bool, CancellationToken, Task> packetReader, CancellationToken combinedToken)
+        {
+            try
             {
                 while (!combinedToken.IsCancellationRequested)
                 {
@@ -53,16 +60,25 @@ namespace SharpCaster.Services
                         await packetReader(answer, true, combinedToken);
                     }
                 }
-            }, combinedToken);
+                runTaskCompleted.SetResult(true);
+            }
+            catch (OperationCanceledException)
+            {
+                runTaskCompleted.SetResult(true);
+            }
+            catch (Exception ex)
+            {
+                runTaskCompleted.SetException(ex);
+            }
         }
 
-        public async Task Disconnect()
+        public async Task Disconnect(CancellationToken token)
         {
             if (client != null)
             {
                 stopTokenSource.Cancel();
-                await client.DisconnectAsync();
-                runTask.Wait();
+                await runTaskCompleted.Task;
+                await client.DisconnectAsync(token);
                 client = null;
             }
         }
@@ -81,7 +97,7 @@ namespace SharpCaster.Services
         }
 
         private ChromecastTcpClient client;
-        private Task runTask;
+        private readonly TaskCompletionSource<bool> runTaskCompleted = new TaskCompletionSource<bool>();
         private CancellationTokenSource stopTokenSource;
         private CancellationTokenSource combinedStopTokenSource;
         private readonly SemaphoreSlim clientWriteLock = new SemaphoreSlim(1);
@@ -96,9 +112,11 @@ namespace SharpCaster.Services
             {
                 if (disposing)
                 {
-                    stopTokenSource?.Dispose();
+                    //stopTokenSource?.Cancel();
+                    //runTaskCompleted?.Task.Wait();
+
                     combinedStopTokenSource?.Dispose();
-                    runTask?.Dispose();
+                    stopTokenSource?.Dispose();
                     client?.Dispose();
                     clientWriteLock.Dispose();
                 }

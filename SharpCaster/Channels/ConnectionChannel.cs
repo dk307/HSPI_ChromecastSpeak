@@ -18,6 +18,11 @@ namespace SharpCaster.Channels
             await Write(MessageFactory.Connect(), token);
         }
 
+        public async Task CloseConnection(CancellationToken token)
+        {
+            await Write(MessageFactory.Close, token);
+        }
+
         public async Task ConnectWithDestination(string transportId, CancellationToken token)
         {
             await Write(MessageFactory.ConnectWithDestination(transportId), token);

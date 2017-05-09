@@ -37,7 +37,7 @@ namespace SharpCaster.Services
 
                 // reset the backing field.
                 // depending on the state of the socket this may throw ODE which it is appropriate to ignore
-                try { await DisconnectAsync(); } catch (ObjectDisposedException) { }
+                try { await DisconnectAsync(default(CancellationToken)); } catch (ObjectDisposedException) { }
 
                 // notify that we did cancel
                 cancellationToken.ThrowIfCancellationRequested();
@@ -79,14 +79,14 @@ namespace SharpCaster.Services
         ///     Disconnects from an endpoint previously connected to using <code>ConnectAsync</code>.
         ///     Should not be called on a <code>TcpSocketClient</code> that is not already connected.
         /// </summary>
-        public Task DisconnectAsync()
+        public Task DisconnectAsync(CancellationToken token)
         {
             return Task.Run(() =>
             {
                 sslStream?.Close();
                 writeStream?.Close();
                 tcpClient.Close();
-            });
+            }, token);
         }
 
         public Stream Stream => sslStream;
@@ -110,9 +110,9 @@ namespace SharpCaster.Services
 
         private void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!disposedValue)
             {
-                if (!disposed)
+                if (disposing)
                 {
                     if (sslStream != null)
                     {
@@ -126,14 +126,14 @@ namespace SharpCaster.Services
                     {
                         tcpClient.Dispose();
                     }
-                    disposed = true;
                 }
+                disposedValue = true;
             }
         }
 
         private readonly TcpClient tcpClient = new TcpClient();
         private SslStream sslStream;
         private NetworkStream writeStream;
-        private bool disposed = false;
+        private bool disposedValue = false;
     }
 }

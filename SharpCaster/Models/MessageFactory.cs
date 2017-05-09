@@ -7,10 +7,10 @@ namespace SharpCaster.Models
     {
         private static readonly string UniqueSourceID = "client-" + new Random((int)DateTime.Now.Ticks).Next() % 9999;
 
-        //public static CastMessage Close => new CastMessage
-        //{
-        //    PayloadUtf8 = new CloseRequest().ToJson()
-        //};
+        public static CastMessage Close => new CastMessage
+        {
+            PayloadUtf8 = new CloseRequest().ToJson()
+        };
 
         public static CastMessage Connect() => new CastMessage
         {
@@ -88,10 +88,10 @@ namespace SharpCaster.Models
         //    PayloadUtf8 = new StopApplicationRequest(sessionId).ToJson()
         //};
 
-        //public static CastMessage MediaStatus(string destinationId) => new CastMessage(destinationId, UniqueSourceID)
-        //{
-        //    PayloadUtf8 = new MediaStatusRequest().ToJson()
-        //};
+        public static CastMessage MediaStatus(string destinationId, int requestId) => new CastMessage(destinationId, UniqueSourceID)
+        {
+            PayloadUtf8 = new MediaStatusRequest(requestId).ToJson()
+        };
 
         //public static CastMessage StopMedia(long mediaSessionId) => new CastMessage
         //{

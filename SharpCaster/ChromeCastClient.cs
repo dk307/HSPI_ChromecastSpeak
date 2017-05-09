@@ -39,14 +39,16 @@ namespace SharpCaster
         public MediaChannel MediaChannel { get; }
         public HeartbeatChannel HeartbeatChannel { get; }
         public ReceiverChannel ReceiverChannel { get; }
+        public Uri DeviceUri { get; }
 
         public event EventHandler ConnectedChanged;
 
         private const int ChromecastPort = 8009;
         private IList<ChromecastChannel> Channels;
 
-        public ChromeCastClient()
+        public ChromeCastClient(Uri uri)
         {
+            DeviceUri = uri;
             ChromecastSocketService = new ChromecastSocketService();
             Channels = new List<ChromecastChannel>();
             ConnectionChannel = new ConnectionChannel(this);
@@ -59,15 +61,16 @@ namespace SharpCaster
             Channels.Add(MediaChannel);
         }
 
-        public async Task ConnectChromecast(Uri uri, CancellationToken token)
+        public async Task ConnectChromecast(CancellationToken token)
         {
-            await ChromecastSocketService.Connect(uri.Host, ChromecastPort, ConnectionChannel,
+            await ChromecastSocketService.Connect(DeviceUri.Host, ChromecastPort, ConnectionChannel,
                 HeartbeatChannel, ReadPacket, token).ConfigureAwait(false);
         }
 
-        public async Task Disconnect()
+        public async Task Disconnect(CancellationToken token)
         {
-            await ChromecastSocketService.Disconnect();
+            await ConnectionChannel.CloseConnection(token);
+            await ChromecastSocketService.Disconnect(token);
         }
 
         private async Task ReadPacket(Stream stream, bool parsed, CancellationToken token)

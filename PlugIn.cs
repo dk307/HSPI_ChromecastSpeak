@@ -138,7 +138,7 @@ namespace Hspi
             }
             catch (Exception ex)
             {
-                LogWarning(Invariant($"Failed to Speak  With {ex.GetFullMessage()}"));
+                LogWarning(Invariant($"Failed to Speak With: {ex.GetFullMessage()}"));
             }
 
             if (pluginConfig.ForwardSpeach)

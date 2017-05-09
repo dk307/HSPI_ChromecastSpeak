@@ -12,6 +12,9 @@ using SharpCaster.Models.ChromecastStatus;
 
 namespace SharpCaster.Channels
 {
+    using SharpCaster.Exceptions;
+    using static System.FormattableString;
+
     internal class MediaChannel : ChromecastChannel
     {
         public MediaChannel(ChromeCastClient client)
@@ -36,7 +39,7 @@ namespace SharpCaster.Channels
                 {
                     if (response.status == null)
                     {
-                        completed.SetException(new Exception("Request Failed"));
+                        completed.SetException(new MediaLoadException(Client.DeviceUri.ToString(), response.type));
                     }
                     else
                     {
@@ -46,10 +49,16 @@ namespace SharpCaster.Channels
             }
         }
 
-        //public async Task GetMediaStatus()
-        //{
-        //    await Write(MessageFactory.MediaStatus(Client.CurrentApplicationTransportId));
-        //}
+        public async Task GetMediaStatus(string transportId, CancellationToken token)
+        {
+            int requestId = RequestIdProvider.Next;
+
+            await Write(MessageFactory.MediaStatus(transportId, requestId), token);
+
+            TaskCompletionSource<bool> completed = new TaskCompletionSource<bool>();
+            completedList[requestId] = completed;
+            await completed.Task;
+        }
 
         public async Task LoadMedia(
             ChromecastApplication application,
