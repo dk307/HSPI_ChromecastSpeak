@@ -25,7 +25,7 @@ namespace Hspi.Chromecast
             this.logger = logger;
         }
 
-        public async Task Play(Uri playUri, string mimeType, double duration, CancellationToken cancellationToken)
+        public async Task Play(Uri playUri, string mimeType, double duration, double? volume, CancellationToken cancellationToken)
         {
             logger.DebugLog(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
             if (!Uri.TryCreate(Invariant($"https://{device.DeviceIP}/"), UriKind.Absolute, out Uri deviceUri))
@@ -58,6 +58,11 @@ namespace Hspi.Chromecast
                     if (defaultApplication == null)
                     {
                         throw new ChromecastDeviceException(device.Name, "No default app found inspite of launching it");
+                    }
+
+                    if (volume.HasValue)
+                    {
+                        await client.ReceiverChannel.SetVolume(volume, false, cancellationToken);
                     }
 
                     //System.Uri.TryCreate("http://192.168.1.245", UriKind.Absolute, out var t);

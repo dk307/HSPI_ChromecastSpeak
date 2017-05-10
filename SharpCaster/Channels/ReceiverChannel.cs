@@ -57,6 +57,20 @@ namespace SharpCaster.Channels
             await completed.Task;
         }
 
+        public async Task SetVolume(double? level, bool? muted, CancellationToken token)
+        {
+            if (level.HasValue && (level < 0 || level > 1.0))
+            {
+                throw new ArgumentException("level must be between 0.0f and 1.0f", nameof(level));
+            }
+
+            int requestId = RequestIdProvider.Next;
+            await Write(MessageFactory.Volume(level, muted, requestId), token);
+            TaskCompletionSource<bool> completed = new TaskCompletionSource<bool>();
+            completedList[requestId] = completed;
+            await completed.Task;
+        }
+
         private readonly ConcurrentDictionary<int, TaskCompletionSource<bool>> completedList =
                                 new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
     }

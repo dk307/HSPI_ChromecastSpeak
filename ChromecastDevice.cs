@@ -9,8 +9,9 @@ namespace Hspi
 {
     internal class ChromecastDevice
     {
-        public ChromecastDevice(string id, string name, IPAddress deviceIP)
+        public ChromecastDevice(string id, string name, IPAddress deviceIP, double? volume = null)
         {
+            Volume = 1D;
             Name = name;
             Id = id;
             DeviceIP = deviceIP;
@@ -19,5 +20,6 @@ namespace Hspi
         public string Id { get; }
         public string Name { get; }
         public IPAddress DeviceIP { get; }
+        public double? Volume { get; }
     }
 }

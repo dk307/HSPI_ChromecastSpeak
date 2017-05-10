@@ -150,6 +150,8 @@
     <Compile Include="SharpCaster\Models\ChromecastRequests\Request.cs" />
     <Compile Include="SharpCaster\Models\ChromecastRequests\RequestIdProvider.cs" />
     <Compile Include="SharpCaster\Models\ChromecastRequests\RequestWithId.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\VolumeDataObject.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\VolumeRequest.cs" />
     <Compile Include="SharpCaster\Models\ChromecastSSLClientDataReceivedArgs.cs" />
     <Compile Include="SharpCaster\Models\ChromecastStatus\ChromecastApplication.cs" />
     <Compile Include="SharpCaster\Models\ChromecastStatus\ChromecastStatus.cs" />

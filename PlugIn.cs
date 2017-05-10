@@ -162,7 +162,7 @@ namespace Hspi
                 // Set a timeout for 60 seconds for speak to finish to detect hangs
                 stopTokenSource.CancelAfter(TimeSpan.FromSeconds(60));
                 SimpleChromecast chromecast = new SimpleChromecast(this, device);
-                playTasks.Add(chromecast.Play(uri, voiceData.MimeType, voiceData.Duration, combinedStopTokenSource.Token));
+                playTasks.Add(chromecast.Play(uri, voiceData.MimeType, voiceData.Duration, device.Volume, combinedStopTokenSource.Token));
             }
 
             Task.WaitAll(playTasks.ToArray());

@@ -22,15 +22,10 @@ namespace SharpCaster.Models
             PayloadUtf8 = new ConnectRequest().ToJson()
         };
 
-        //public static CastMessage Volume(double level) => new CastMessage
-        //{
-        //    PayloadUtf8 = new VolumeRequest(level).ToJson()
-        //};
-
-        //public static CastMessage Volume(bool muted) => new CastMessage
-        //{
-        //    PayloadUtf8 = new VolumeRequest(muted).ToJson()
-        //};
+        public static CastMessage Volume(double? level, bool? muted, int requestId) => new CastMessage
+        {
+            PayloadUtf8 = new VolumeRequest(level, muted, requestId).ToJson()
+        };
 
         public static CastMessage Ping => new CastMessage
         {
