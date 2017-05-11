@@ -37,7 +37,7 @@ namespace SharpCaster.Services
 
                 // reset the backing field.
                 // depending on the state of the socket this may throw ODE which it is appropriate to ignore
-                try { await DisconnectAsync(default(CancellationToken)); } catch (ObjectDisposedException) { }
+                try { Disconnect(); } catch (ObjectDisposedException) { }
 
                 // notify that we did cancel
                 cancellationToken.ThrowIfCancellationRequested();
@@ -55,8 +55,6 @@ namespace SharpCaster.Services
             sslStream = secureStream;
         }
 
-        #region Secure Sockets Details
-
         private static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             switch (sslPolicyErrors)
@@ -73,20 +71,11 @@ namespace SharpCaster.Services
             return true;
         }
 
-        #endregion Secure Sockets Details
-
-        /// <summary>
-        ///     Disconnects from an endpoint previously connected to using <code>ConnectAsync</code>.
-        ///     Should not be called on a <code>TcpSocketClient</code> that is not already connected.
-        /// </summary>
-        public Task DisconnectAsync(CancellationToken token)
+        public void Disconnect()
         {
-            return Task.Run(() =>
-            {
-                sslStream?.Close();
-                writeStream?.Close();
-                tcpClient.Close();
-            }, token);
+            sslStream?.Close();
+            writeStream?.Close();
+            tcpClient?.Close();
         }
 
         public Stream Stream => sslStream;

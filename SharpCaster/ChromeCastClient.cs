@@ -24,8 +24,9 @@ namespace SharpCaster
             get { return _connected; }
             set
             {
-                if (_connected != value) ConnectedChanged?.Invoke(this, EventArgs.Empty);
+                var oldConnected = _connected;
                 _connected = value;
+                if (_connected != oldConnected) ConnectedChanged?.Invoke(this, value);
             }
         }
 
@@ -41,7 +42,7 @@ namespace SharpCaster
         public ReceiverChannel ReceiverChannel { get; }
         public Uri DeviceUri { get; }
 
-        public event EventHandler ConnectedChanged;
+        public event EventHandler<bool> ConnectedChanged;
 
         private const int ChromecastPort = 8009;
         private IList<ChromecastChannel> Channels;
@@ -69,8 +70,12 @@ namespace SharpCaster
 
         public async Task Disconnect(CancellationToken token)
         {
-            await ConnectionChannel.CloseConnection(token);
-            await ChromecastSocketService.Disconnect(token);
+            foreach (var channel in Channels)
+            {
+                channel.Abort();
+            }
+            await ConnectionChannel.CloseConnection(token).ConfigureAwait(false);
+            await ChromecastSocketService.Disconnect(default(CancellationToken)).ConfigureAwait(false);
         }
 
         private async Task ReadPacket(Stream stream, bool parsed, CancellationToken token)
@@ -121,9 +126,11 @@ namespace SharpCaster
         {
             foreach (var channel in Channels.Where(i => i.Namespace == castMessage.Namespace))
             {
-                channel.OnMessageReceived(new ChromecastSSLClientDataReceivedArgs(castMessage));
+                channel.OnMessageReceived(castMessage);
             }
         }
+
+        private readonly SemaphoreSlim clientConnectLock = new SemaphoreSlim(1);
 
         #region IDisposable Support
 

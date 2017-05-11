@@ -35,10 +35,13 @@ namespace Hspi.Chromecast
 
             using (var client = new ChromeCastClient(deviceUri))
             {
-                var connectedSource = new TaskCompletionSource<bool>(cancellationToken);
-                client.ConnectedChanged += (sender, e) => connectedSource.SetResult(true);
+                logger.DebugLog(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
+                connectedSource = new TaskCompletionSource<bool>(cancellationToken);
+                client.ConnectedChanged += Client_ConnectedChanged;
                 await client.ConnectChromecast(cancellationToken).ConfigureAwait(false);
-                await connectedSource.Task.ConfigureAwait(false);
+                await WaitOnRequestCompletion(connectedSource.Task, cancellationToken).ConfigureAwait(false);
+                client.ConnectedChanged -= Client_ConnectedChanged;
+
                 logger.DebugLog(Invariant($"Connected to Chromecast {device.Name} on {device.DeviceIP}"));
 
                 try
@@ -67,7 +70,7 @@ namespace Hspi.Chromecast
 
                     //System.Uri.TryCreate("http://192.168.1.245", UriKind.Absolute, out var t);
 
-                    await client.ConnectionChannel.ConnectWithDestination(defaultApplication.TransportId, cancellationToken);
+                    await client.ConnectionChannel.ConnectWithDestination(defaultApplication.TransportId + "f", cancellationToken);
 
                     logger.DebugLog(Invariant($"Launched default app on Chromecast {device.Name}"));
 
@@ -85,7 +88,22 @@ namespace Hspi.Chromecast
             }
         }
 
+        private void Client_ConnectedChanged(object sender, bool connected)
+        {
+            if (connected)
+            {
+                connectedSource.SetResult(true);
+            }
+        }
+
+        protected static async Task WaitOnRequestCompletion(Task requestCompletedTask, CancellationToken token)
+        {
+            await Task.WhenAny(requestCompletedTask, Task.Delay(-1, token));
+            token.ThrowIfCancellationRequested();
+        }
+
         private readonly ILogger logger;
         private readonly ChromecastDevice device;
+        private TaskCompletionSource<bool> connectedSource;
     };
 }

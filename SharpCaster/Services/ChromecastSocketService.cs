@@ -17,23 +17,31 @@ namespace SharpCaster.Services
             Func<Stream, bool, CancellationToken, Task> packetReader,
             CancellationToken token)
         {
-            if (client != null)
+            await clientConnectLock.WaitAsync(token);
+            try
             {
-                throw new Exception("Already set");
-            }
-            client = new ChromecastTcpClient();
-            stopTokenSource = new CancellationTokenSource();
-            combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, token);
-            CancellationToken combinedToken = combinedStopTokenSource.Token;
-            await client.ConnectAsync(host, port, combinedToken);
+                if (client != null)
+                {
+                    throw new Exception("Already set");
+                }
+                client = new ChromecastTcpClient();
+                stopTokenSource = new CancellationTokenSource();
+                combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, token);
+                CancellationToken combinedToken = combinedStopTokenSource.Token;
+                await client.ConnectAsync(host, port, combinedToken);
 
 #pragma warning disable 4014
-            Task.Factory.StartNew(async (a) => { await ProcessRead(packetReader, combinedToken); },
-                                    TaskCreationOptions.RunContinuationsAsynchronously, combinedToken);
+                Task.Factory.StartNew(async (a) => { await ProcessRead(packetReader, combinedToken); },
+                                        TaskCreationOptions.RunContinuationsAsynchronously, combinedToken);
 #pragma warning restore 4014
 
-            connectionChannel.OpenConnection(combinedStopTokenSource.Token);
-            heartbeatChannel.StartHeartbeat(combinedStopTokenSource.Token);
+                connectionChannel.OpenConnection(combinedStopTokenSource.Token);
+                heartbeatChannel.StartHeartbeat(combinedStopTokenSource.Token);
+            }
+            finally
+            {
+                clientConnectLock.Release();
+            }
         }
 
         private async Task ProcessRead(Func<Stream, bool, CancellationToken, Task> packetReader, CancellationToken combinedToken)
@@ -74,12 +82,19 @@ namespace SharpCaster.Services
 
         public async Task Disconnect(CancellationToken token)
         {
-            if (client != null)
+            await clientConnectLock.WaitAsync(token);
+            try
             {
-                stopTokenSource.Cancel();
-                await runTaskCompleted.Task;
-                await client.DisconnectAsync(token);
-                client = null;
+                if (client != null)
+                {
+                    stopTokenSource.Cancel();
+                    await runTaskCompleted.Task;
+                    client.Disconnect();
+                }
+            }
+            finally
+            {
+                clientConnectLock.Release();
             }
         }
 
@@ -101,6 +116,7 @@ namespace SharpCaster.Services
         private CancellationTokenSource stopTokenSource;
         private CancellationTokenSource combinedStopTokenSource;
         private readonly SemaphoreSlim clientWriteLock = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim clientConnectLock = new SemaphoreSlim(1);
 
         #region IDisposable Support
 
@@ -119,6 +135,7 @@ namespace SharpCaster.Services
                     stopTokenSource?.Dispose();
                     client?.Dispose();
                     clientWriteLock.Dispose();
+                    clientConnectLock.Dispose();
                 }
 
                 disposedValue = true;

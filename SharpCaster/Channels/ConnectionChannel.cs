@@ -1,6 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 using SharpCaster.Models;
+using SharpCaster.Models.ChromecastStatus;
 using System.Threading;
+using SharpCaster.Models.ChromecastRequests;
+using System.Collections.Concurrent;
 using NullGuard;
 
 namespace SharpCaster.Channels
@@ -10,6 +16,18 @@ namespace SharpCaster.Channels
     {
         public ConnectionChannel(ChromeCastClient client) :
             base(client, "urn:x-cast:com.google.cast.tp.connection")
+        {
+        }
+
+        internal override void OnMessageReceived(CastMessage castMessage)
+        {
+            //if (castMessage.GetJsonType() == "CLOSE")
+            //{
+            //    Client.Connected = false;
+            //};
+        }
+
+        public override void Abort()
         {
         }
 

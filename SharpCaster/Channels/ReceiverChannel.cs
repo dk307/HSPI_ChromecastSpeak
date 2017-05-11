@@ -12,17 +12,16 @@ using NullGuard;
 namespace SharpCaster.Channels
 {
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class ReceiverChannel : ChromecastChannel
+    internal class ReceiverChannel : ChromecastChannelWithRequestTracking
     {
         public ReceiverChannel(ChromeCastClient client) :
             base(client, "urn:x-cast:com.google.cast.receiver")
         {
-            MessageReceived += ReceiverChannel_MessageReceived;
         }
 
-        private void ReceiverChannel_MessageReceived(object sender, ChromecastSSLClientDataReceivedArgs e)
+        internal override void OnMessageReceived(CastMessage castMessage)
         {
-            var json = e.Message.PayloadUtf8;
+            var json = castMessage.PayloadUtf8;
             var response = JsonConvert.DeserializeObject<ChromecastStatusResponse>(json);
             if (response.ChromecastStatus != null)
             {
@@ -30,7 +29,7 @@ namespace SharpCaster.Channels
             }
             if (response.requestId != 0)
             {
-                if (completedList.TryRemove(response.requestId, out var completed))
+                if (TryRemoveRequestTracking(response.requestId, out var completed))
                 {
                     completed.SetResult(true);
                 }
@@ -41,20 +40,17 @@ namespace SharpCaster.Channels
         {
             int requestId = RequestIdProvider.Next;
             var message = MessageFactory.Launch(applicationId, requestId);
+            var requestCompletedSource = await AddRequestTracking(requestId, token);
             await Write(message, token);
-
-            TaskCompletionSource<bool> completed = new TaskCompletionSource<bool>();
-            completedList[requestId] = completed;
-            await completed.Task;
+            await WaitOnRequestCompletion(requestCompletedSource.Task, token);
         }
 
         public async Task GetChromecastStatus(CancellationToken token)
         {
             int requestId = RequestIdProvider.Next;
+            var requestCompletedSource = await AddRequestTracking(requestId, token);
             await Write(MessageFactory.Status(requestId), token);
-            TaskCompletionSource<bool> completed = new TaskCompletionSource<bool>();
-            completedList[requestId] = completed;
-            await completed.Task;
+            await WaitOnRequestCompletion(requestCompletedSource.Task, token);
         }
 
         public async Task SetVolume(double? level, bool? muted, CancellationToken token)
@@ -65,13 +61,9 @@ namespace SharpCaster.Channels
             }
 
             int requestId = RequestIdProvider.Next;
+            var requestCompletedSource = await AddRequestTracking(requestId, token);
             await Write(MessageFactory.Volume(level, muted, requestId), token);
-            TaskCompletionSource<bool> completed = new TaskCompletionSource<bool>();
-            completedList[requestId] = completed;
-            await completed.Task;
+            await WaitOnRequestCompletion(requestCompletedSource.Task, token);
         }
-
-        private readonly ConcurrentDictionary<int, TaskCompletionSource<bool>> completedList =
-                                new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
     }
 }

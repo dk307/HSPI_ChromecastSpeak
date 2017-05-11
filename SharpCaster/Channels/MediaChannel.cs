@@ -5,27 +5,25 @@ using SharpCaster.Models;
 using SharpCaster.Models.Metadata;
 using SharpCaster.Models.ChromecastRequests;
 using SharpCaster.Models.MediaStatus;
-using System.Collections.Concurrent;
 using System.Threading;
 using System;
 using SharpCaster.Models.ChromecastStatus;
+using SharpCaster.Exceptions;
 
 namespace SharpCaster.Channels
 {
-    using SharpCaster.Exceptions;
     using static System.FormattableString;
 
-    internal class MediaChannel : ChromecastChannel
+    internal class MediaChannel : ChromecastChannelWithRequestTracking
     {
         public MediaChannel(ChromeCastClient client)
             : base(client, "urn:x-cast:com.google.cast.media")
         {
-            MessageReceived += OnMessageReceived;
         }
 
-        private void OnMessageReceived(object sender, ChromecastSSLClientDataReceivedArgs chromecastSSLClientDataReceivedArgs)
+        internal override void OnMessageReceived(CastMessage castMessage)
         {
-            var json = chromecastSSLClientDataReceivedArgs.Message.PayloadUtf8;
+            var json = castMessage.PayloadUtf8;
             var response = JsonConvert.DeserializeObject<MediaStatusResponse>(json);
 
             if (response.status != null)
@@ -35,7 +33,7 @@ namespace SharpCaster.Channels
 
             if (response.requestId != 0)
             {
-                if (completedList.TryRemove(response.requestId, out var completed))
+                if (TryRemoveRequestTracking(response.requestId, out var completed))
                 {
                     if (response.status == null)
                     {
@@ -53,11 +51,9 @@ namespace SharpCaster.Channels
         {
             int requestId = RequestIdProvider.Next;
 
+            var requestCompletedSource = await AddRequestTracking(requestId, token);
             await Write(MessageFactory.MediaStatus(transportId, requestId), token);
-
-            TaskCompletionSource<bool> completed = new TaskCompletionSource<bool>();
-            completedList[requestId] = completed;
-            await completed.Task;
+            await WaitOnRequestCompletion(requestCompletedSource.Task, token);
         }
 
         public async Task LoadMedia(
@@ -80,14 +76,9 @@ namespace SharpCaster.Channels
                                       customData, activeTrackIds);
 
             var reqJson = req.ToJson();
+            var requestCompletedSource = await AddRequestTracking(requestId, token);
             await Write(MessageFactory.Load(application.TransportId, reqJson), token);
-
-            TaskCompletionSource<bool> completed = new TaskCompletionSource<bool>();
-            completedList[requestId] = completed;
-            await completed.Task;
+            await WaitOnRequestCompletion(requestCompletedSource.Task, token);
         }
-
-        private readonly ConcurrentDictionary<int, TaskCompletionSource<bool>> completedList =
-                        new ConcurrentDictionary<int, TaskCompletionSource<bool>>();
     }
 }
