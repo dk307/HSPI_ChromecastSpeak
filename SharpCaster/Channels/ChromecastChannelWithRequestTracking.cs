@@ -17,6 +17,7 @@ namespace SharpCaster.Channels
         public override void Abort()
         {
             completedListLock.Wait();
+            aborted = true;
             try
             {
                 foreach (var pair in completedList)
@@ -43,7 +44,7 @@ namespace SharpCaster.Channels
             TaskCompletionSource<bool> requestTracking = new TaskCompletionSource<bool>();
             try
             {
-                if (!Client.Connected)
+                if (aborted)
                 {
                     throw new ChromecastDeviceException(Client.DeviceUri.ToString(), "Device got disconnected.");
                 }
@@ -76,6 +77,7 @@ namespace SharpCaster.Channels
             }
         }
 
+        private bool aborted = false;
         private readonly SemaphoreSlim completedListLock = new SemaphoreSlim(1);
 
         private readonly IDictionary<int, TaskCompletionSource<bool>> completedList =

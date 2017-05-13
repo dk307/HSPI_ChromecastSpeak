@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Weavers>
-  <NullGuard />
+  <!--<NullGuard />
   <Costura>
     <ExcludeAssemblies>
       Scheduler
@@ -9,5 +9,5 @@
       ADODB
       Interop.hsrecord2
     </ExcludeAssemblies>
-  </Costura>
+  </Costura>-->
 </Weavers>

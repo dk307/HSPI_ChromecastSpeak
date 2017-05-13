@@ -165,7 +165,7 @@ namespace Hspi
                 playTasks.Add(chromecast.Play(uri, voiceData.MimeType, voiceData.Duration, device.Volume, combinedStopTokenSource.Token));
             }
 
-            Task.WaitAll(playTasks.ToArray());
+            await Task.WhenAll(playTasks.ToArray());
         }
 
         private void RegisterConfigPage()

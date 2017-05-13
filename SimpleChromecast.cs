@@ -70,7 +70,7 @@ namespace Hspi.Chromecast
 
                     //System.Uri.TryCreate("http://192.168.1.245", UriKind.Absolute, out var t);
 
-                    await client.ConnectionChannel.ConnectWithDestination(defaultApplication.TransportId + "f", cancellationToken);
+                    await client.ConnectionChannel.ConnectWithDestination(defaultApplication.TransportId, cancellationToken);
 
                     logger.DebugLog(Invariant($"Launched default app on Chromecast {device.Name}"));
 
@@ -78,12 +78,15 @@ namespace Hspi.Chromecast
                     await client.MediaChannel.LoadMedia(defaultApplication, playUri, mimeType, cancellationToken,
                                                         duration: duration);
                     logger.DebugLog(Invariant($"Loaded Media in on Chromecast {device.Name}"));
-                }
-                finally
-                {
-                    logger.DebugLog(Invariant($"Diconnecting Chromecast {device.Name}"));
-                    await client.Disconnect(cancellationToken);
+
+                    logger.DebugLog(Invariant($"Disconnecting Chromecast {device.Name}"));
+                    await client.Disconnect(cancellationToken).ConfigureAwait(false);
                     logger.DebugLog(Invariant($"Disconnected Chromecast {device.Name}"));
+                }
+                catch
+                {
+                    await client.Abort().ConfigureAwait(false);
+                    throw;
                 }
             }
         }

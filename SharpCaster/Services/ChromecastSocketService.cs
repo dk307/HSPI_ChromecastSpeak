@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using SharpCaster.Channels;
 using System.Net.Sockets;
 using NullGuard;
+using Hspi;
 
 namespace SharpCaster.Services
 {
@@ -17,7 +18,7 @@ namespace SharpCaster.Services
             Func<Stream, bool, CancellationToken, Task> packetReader,
             CancellationToken token)
         {
-            await clientConnectLock.WaitAsync(token);
+            await clientConnectLock.WaitAsync(token).ConfigureAwait(false);
             try
             {
                 if (client != null)
@@ -28,12 +29,9 @@ namespace SharpCaster.Services
                 stopTokenSource = new CancellationTokenSource();
                 combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, token);
                 CancellationToken combinedToken = combinedStopTokenSource.Token;
-                await client.ConnectAsync(host, port, combinedToken);
+                await client.ConnectAsync(host, port, combinedToken).ConfigureAwait(false);
 
-#pragma warning disable 4014
-                Task.Factory.StartNew(async (a) => { await ProcessRead(packetReader, combinedToken); },
-                                        TaskCreationOptions.RunContinuationsAsynchronously, combinedToken);
-#pragma warning restore 4014
+                readTask = ProcessRead(packetReader, combinedToken);
 
                 connectionChannel.OpenConnection(combinedStopTokenSource.Token);
                 heartbeatChannel.StartHeartbeat(combinedStopTokenSource.Token);
@@ -46,49 +44,37 @@ namespace SharpCaster.Services
 
         private async Task ProcessRead(Func<Stream, bool, CancellationToken, Task> packetReader, CancellationToken combinedToken)
         {
-            try
+            while (!combinedToken.IsCancellationRequested)
             {
-                while (!combinedToken.IsCancellationRequested)
+                var sizeBuffer = new byte[4];
+                byte[] messageBuffer = { };
+                // First message should contain the size of message
+                await client.Stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, combinedToken).ConfigureAwait(false);
+                // The message is little-endian (that is, little end first),
+                // reverse the byte array.
+                Array.Reverse(sizeBuffer);
+                //Retrieve the size of message
+                var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
+                messageBuffer = new byte[messageSize];
+                await client.Stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
+                using (var answer = new MemoryStream(messageBuffer.Length))
                 {
-                    var sizeBuffer = new byte[4];
-                    byte[] messageBuffer = { };
-                    // First message should contain the size of message
-                    await client.Stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, combinedToken).ConfigureAwait(false);
-                    // The message is little-endian (that is, little end first),
-                    // reverse the byte array.
-                    Array.Reverse(sizeBuffer);
-                    //Retrieve the size of message
-                    var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
-                    messageBuffer = new byte[messageSize];
-                    await client.Stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
-                    using (var answer = new MemoryStream(messageBuffer.Length))
-                    {
-                        await answer.WriteAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
-                        answer.Position = 0;
-                        await packetReader(answer, true, combinedToken);
-                    }
+                    await answer.WriteAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
+                    answer.Position = 0;
+                    await packetReader(answer, true, combinedToken);
                 }
-                runTaskCompleted.SetResult(true);
-            }
-            catch (OperationCanceledException)
-            {
-                runTaskCompleted.SetResult(true);
-            }
-            catch (Exception ex)
-            {
-                runTaskCompleted.SetException(ex);
             }
         }
 
         public async Task Disconnect(CancellationToken token)
         {
-            await clientConnectLock.WaitAsync(token);
+            await clientConnectLock.WaitAsync(token).ConfigureAwait(false);
             try
             {
                 if (client != null)
                 {
                     stopTokenSource.Cancel();
-                    await runTaskCompleted.Task;
+                    await readTask.WaitForFinishNoCancelException().ConfigureAwait(false);
                     client.Disconnect();
                 }
             }
@@ -100,7 +86,7 @@ namespace SharpCaster.Services
 
         public async Task Write(byte[] bytes, CancellationToken token)
         {
-            await clientWriteLock.WaitAsync(token);
+            await clientWriteLock.WaitAsync(token).ConfigureAwait(false);
             try
             {
                 await client.Stream.WriteAsync(bytes, 0, bytes.Length, token).ConfigureAwait(false);
@@ -112,11 +98,11 @@ namespace SharpCaster.Services
         }
 
         private ChromecastTcpClient client;
-        private readonly TaskCompletionSource<bool> runTaskCompleted = new TaskCompletionSource<bool>();
         private CancellationTokenSource stopTokenSource;
         private CancellationTokenSource combinedStopTokenSource;
         private readonly SemaphoreSlim clientWriteLock = new SemaphoreSlim(1);
         private readonly SemaphoreSlim clientConnectLock = new SemaphoreSlim(1);
+        private Task readTask;
 
         #region IDisposable Support
 

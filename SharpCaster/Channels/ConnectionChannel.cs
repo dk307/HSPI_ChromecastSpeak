@@ -21,10 +21,18 @@ namespace SharpCaster.Channels
 
         internal override void OnMessageReceived(CastMessage castMessage)
         {
-            //if (castMessage.GetJsonType() == "CLOSE")
-            //{
-            //    Client.Connected = false;
-            //};
+            if (castMessage.GetJsonType() == "CLOSE")
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Client.Abort();
+                    }
+                    catch (ObjectDisposedException)
+                    { }
+                });
+            };
         }
 
         public override void Abort()
@@ -33,17 +41,17 @@ namespace SharpCaster.Channels
 
         public async void OpenConnection(CancellationToken token)
         {
-            await Write(MessageFactory.Connect(), token);
+            await Write(MessageFactory.Connect(), token).ConfigureAwait(false);
         }
 
         public async Task CloseConnection(CancellationToken token)
         {
-            await Write(MessageFactory.Close, token);
+            await Write(MessageFactory.Close, token).ConfigureAwait(false);
         }
 
         public async Task ConnectWithDestination(string transportId, CancellationToken token)
         {
-            await Write(MessageFactory.ConnectWithDestination(transportId), token);
+            await Write(MessageFactory.ConnectWithDestination(transportId), token).ConfigureAwait(false);
         }
     }
 }

@@ -64,18 +64,49 @@ namespace SharpCaster
 
         public async Task ConnectChromecast(CancellationToken token)
         {
-            await ChromecastSocketService.Connect(DeviceUri.Host, ChromecastPort, ConnectionChannel,
-                HeartbeatChannel, ReadPacket, token).ConfigureAwait(false);
+            await clientConnectLock.WaitAsync(token).ConfigureAwait(false);
+            try
+            {
+                await ChromecastSocketService.Connect(DeviceUri.Host, ChromecastPort, ConnectionChannel,
+                    HeartbeatChannel, ReadPacket, token).ConfigureAwait(false);
+            }
+            finally
+            {
+                clientConnectLock.Release();
+            }
         }
 
         public async Task Disconnect(CancellationToken token)
         {
-            foreach (var channel in Channels)
+            await DisconnectCore(true, token).ConfigureAwait(false);
+        }
+
+        public async Task Abort(CancellationToken token = default(CancellationToken))
+        {
+            await DisconnectCore(false, token).ConfigureAwait(false);
+        }
+
+        private async Task DisconnectCore(bool sendClose, CancellationToken token)
+        {
+            await clientConnectLock.WaitAsync(token).ConfigureAwait(false);
+            Debug.WriteLine("DisconnectCore {0}", sendClose);
+            try
             {
-                channel.Abort();
+                foreach (var channel in Channels)
+                {
+                    channel.Abort();
+                }
+                if (sendClose)
+                {
+                    await ConnectionChannel.CloseConnection(token).ConfigureAwait(false);
+                }
+                await ChromecastSocketService.Disconnect(token).ConfigureAwait(false);
+                Debug.WriteLine("DisconnectCore Done {0}", sendClose);
             }
-            await ConnectionChannel.CloseConnection(token).ConfigureAwait(false);
-            await ChromecastSocketService.Disconnect(default(CancellationToken)).ConfigureAwait(false);
+            finally
+            {
+                clientConnectLock.Release();
+            }
         }
 
         private async Task ReadPacket(Stream stream, bool parsed, CancellationToken token)

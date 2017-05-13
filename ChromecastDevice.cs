@@ -11,7 +11,7 @@ namespace Hspi
     {
         public ChromecastDevice(string id, string name, IPAddress deviceIP, double? volume = null)
         {
-            Volume = 0.2D;
+            Volume = 0.0D;
             Name = name;
             Id = id;
             DeviceIP = deviceIP;
