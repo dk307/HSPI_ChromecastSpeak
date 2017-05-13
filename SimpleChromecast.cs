@@ -65,10 +65,8 @@ namespace Hspi.Chromecast
 
                     if (volume.HasValue)
                     {
-                        await client.ReceiverChannel.SetVolume(volume, false, cancellationToken);
+                        await client.ReceiverChannel.SetVolume(volume / 100, false, cancellationToken);
                     }
-
-                    //System.Uri.TryCreate("http://192.168.1.245", UriKind.Absolute, out var t);
 
                     await client.ConnectionChannel.ConnectWithDestination(defaultApplication.TransportId, cancellationToken);
 

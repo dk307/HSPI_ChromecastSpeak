@@ -44,7 +44,8 @@ namespace Hspi
                 IPAddress.TryParse(ipAddressString, out var deviceIP);
 
                 string name = GetValue(NameKey, string.Empty, deviceId);
-                devices.Add(deviceId, new ChromecastDevice(deviceId, name, deviceIP));
+                ushort? volume = GetValue<ushort?>(VolumeKey, null, deviceId);
+                devices.Add(deviceId, new ChromecastDevice(deviceId, name, deviceIP, volume));
             }
         }
 
@@ -174,6 +175,7 @@ namespace Hspi
                 devices[device.Id] = device;
                 SetValue(NameKey, device.Name, device.Id);
                 SetValue(IPAddressKey, device.DeviceIP.ToString(), device.Id);
+                SetValue(VolumeKey, device.Volume, device.Id);
                 SetValue(DeviceIds, devices.Keys.Aggregate((x, y) => x + DeviceIdsSeparator + y));
             }
             finally
@@ -280,6 +282,7 @@ namespace Hspi
         private const string WebServerPortKey = "WebServerPort";
         private readonly static string FileName = Invariant($"{Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location)}.ini");
         private const string IPAddressKey = "IPAddress";
+        private const string VolumeKey = "Volume";
         private const string DefaultSection = "Settings";
         private const char DeviceIdsSeparator = '|';
         private const char PortsEnabledSeparator = ',';

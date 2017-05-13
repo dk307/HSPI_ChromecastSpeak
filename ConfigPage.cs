@@ -126,7 +126,15 @@ namespace Hspi
                         deviceId = name.Replace(' ', '_').Replace('.', '_');
                     }
 
-                    var device = new ChromecastDevice(deviceId, parts[NameId], ipAddress);
+                    string volumeString = parts[VolumeId];
+                    short volume;
+
+                    if (!short.TryParse(volumeString, out volume))
+                    {
+                        volume = -1;
+                    }
+
+                    var device = new ChromecastDevice(deviceId, parts[NameId], ipAddress, volume == -1 ? null : (ushort?)volume);
 
                     this.pluginConfig.AddDevice(device);
                     this.pluginConfig.FireConfigChanged();
@@ -159,26 +167,33 @@ namespace Hspi
 
             stb.Append(@"<div>");
             stb.Append(@"<table class='full_width_table'");
-            stb.Append("<tr height='5'><td colspane=3></td></tr>");
-            stb.Append("<tr><td class='tableheader' colspan=3>Devices</td></tr>");
-            stb.Append(@"<tr><td class='tablecolumn'>Name</td>" +
-                        "<td class='tablecolumn'>Device IP Address</td><td class='tablecolumn'></td></tr>");
+            stb.Append("<tr height='5'><td colspan=4></td></tr>");
+            stb.Append("<tr><td class='tableheader' colspan=4>Devices</td></tr>");
+            stb.Append(@"<tr>" +
+                        "<td class='tablecolumn'>Name</td>" +
+                        "<td class='tablecolumn'>Device IP Address</td>" +
+                        "<td class='tablecolumn'>Volume</td>" +
+                        "<td class='tablecolumn'></td>" +
+                        "</tr>");
 
             foreach (var device in pluginConfig.Devices)
             {
                 stb.Append(@"<tr>");
                 stb.Append(Invariant($"<td class='tablecell'>{device.Value.Name}</td>"));
                 stb.Append(Invariant($"<td class='tablecell'>{device.Value.DeviceIP}</td>"));
+
+                string volumeString = device.Value.Volume != null ? device.Value.Volume.Value.ToString(CultureInfo.InvariantCulture) : "Don't Change";
+                stb.Append(Invariant($"<td class='tablecell'>{volumeString}</td>"));
                 stb.Append(Invariant($"<td class='tablecell'>{PageTypeButton(Invariant($"Edit{device.Key}"), "Edit", EditDevicePageType, deviceId: device.Key)}</ td ></ tr > "));
             }
-            stb.Append(Invariant($"<tr><td colspan=3>{PageTypeButton("Add New Device", AddNewName, EditDevicePageType)}</td><td></td></tr>"));
-            stb.Append("<tr height='5'><td colspan=3></td></tr>");
+            stb.Append(Invariant($"<tr><td colspan=4>{PageTypeButton("Add New Device", AddNewName, EditDevicePageType)}</td><td></td></tr>"));
+            stb.Append("<tr height='5'><td colspan=4></td></tr>");
             stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmSettings", "Id", "Post"));
-            stb.Append(Invariant($"<tr><td colspan=3>Debug Logging Enabled:{FormCheckBox(DebugLoggingId, string.Empty, this.pluginConfig.DebugLogging, true)}</ td ></ tr > "));
+            stb.Append(Invariant($"<tr><td colspan=4>Debug Logging Enabled:{FormCheckBox(DebugLoggingId, string.Empty, this.pluginConfig.DebugLogging, true)}</ td ></ tr > "));
             stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
 
-            stb.Append(Invariant($"<tr><td colspan=3></td></tr>"));
-            stb.Append(@"<tr height='5'><td colspan=3></td></tr>");
+            stb.Append(Invariant($"<tr><td colspan=4></td></tr>"));
+            stb.Append(@"<tr height='5'><td colspan=4></td></tr>");
             stb.Append(@" </table>");
             stb.Append(@"</div>");
 
@@ -192,6 +207,7 @@ namespace Hspi
             string id = device != null ? device.Id : string.Empty;
             string buttonLabel = device != null ? "Save" : "Add";
             string header = device != null ? "Edit" : "Add New";
+            int volume = device != null ? (device.Volume ?? -1) : -1;
 
             StringBuilder stb = new StringBuilder();
 
@@ -203,6 +219,23 @@ namespace Hspi
             stb.Append(Invariant($"<tr><td class='tableheader' colspan=3>{header}</td></tr>"));
             stb.Append(Invariant($"<tr><td class='tablecell'>Name:</td><td class='tablecell' colspan=2>{HtmlTextBox(NameId, name, @readonly: !string.IsNullOrEmpty(id))}</td></tr>"));
             stb.Append(Invariant($"<tr><td class='tablecell'>DeviceIP:</td><td class='tablecell' colspan=2>{HtmlTextBox(DeviceIPId, ip)}</td></tr>"));
+            stb.Append("<tr><td class='tablecell'>Volume:</td><td class='tablecell' colspan=2>");
+
+            var volumeDropDown = new clsJQuery.jqDropList(NameToId(VolumeId), PageName, false)
+            {
+                toolTip = "Select Volume of device when Spoken",
+                autoPostBack = false,
+            };
+            volumeDropDown.AddItem("Don't Change", "-1", volume == -1);
+
+            foreach (var value in Enumerable.Range(1, 100))
+            {
+                var stringValue = value.ToString(CultureInfo.InvariantCulture);
+                volumeDropDown.AddItem(stringValue, stringValue, volume == value);
+            }
+
+            stb.Append(volumeDropDown.Build());
+            stb.Append("</td></tr>");
             stb.Append(Invariant($"<tr><td colspan=3>{HtmlTextBox(DeviceIdId, id, type: "hidden")}<div id='{SaveErrorDivId}' style='color:Red'></div></td><td></td></tr>"));
             stb.Append(Invariant($"<tr><td colspan=3>{FormPageButton(SaveDeviceName, buttonLabel)}"));
 
@@ -282,6 +315,7 @@ namespace Hspi
         private readonly PluginConfig pluginConfig;
         private const string DeleteDeviceName = "DeleteDeviceName";
         private const string CancelDeviceName = "CancelDeviceName";
+        private const string VolumeId = "VolumeId";
         private const string NameId = "NameId";
         private const string IdPrefix = "id_";
         private const int PortsMax = 8;

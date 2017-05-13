@@ -9,9 +9,13 @@ namespace Hspi
 {
     internal class ChromecastDevice
     {
-        public ChromecastDevice(string id, string name, IPAddress deviceIP, double? volume = null)
+        public ChromecastDevice(string id, string name, IPAddress deviceIP, ushort? volume)
         {
-            Volume = 0.0D;
+            if ((volume.HasValue) && (volume > 100))
+            {
+                throw new ArgumentOutOfRangeException(nameof(volume));
+            }
+            Volume = volume;
             Name = name;
             Id = id;
             DeviceIP = deviceIP;
@@ -20,6 +24,6 @@ namespace Hspi
         public string Id { get; }
         public string Name { get; }
         public IPAddress DeviceIP { get; }
-        public double? Volume { get; }
+        public ushort? Volume { get; }
     }
 }
