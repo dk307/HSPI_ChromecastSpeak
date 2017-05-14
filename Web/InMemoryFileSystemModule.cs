@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unosquare.Labs.EmbedIO;
 using System.Runtime.Caching;
+using System.Diagnostics;
 
 namespace Hspi.Web
 {
@@ -95,6 +96,8 @@ namespace Hspi.Web
 
         private async Task<bool> HandleGet(HttpListenerContext context, CancellationToken ct, bool sendBuffer = true)
         {
+            Debug.WriteLine($"Request Type {context.RequestVerb()} from {context.Request.RemoteEndPoint} for {context.Request.Url}");
+
             var requestedPath = GetUrlPath(context);
 
             var eTagValid = false;
@@ -109,6 +112,7 @@ namespace Hspi.Web
             if (cacheItem == null || cacheItem.Value == null)
             {
                 context.Response.StatusCode = (int)System.Net.HttpStatusCode.NotFound;
+                Debug.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
                 return true;
             }
 
@@ -131,6 +135,7 @@ namespace Hspi.Web
                 (eTagValid || context.RequestHeader(Constants.HeaderIfModifiedSince).Equals(utcFileDateString)))
             {
                 SetStatusCode304(context);
+                Debug.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
                 return true;
             }
 
@@ -155,17 +160,14 @@ namespace Hspi.Web
                 {
                     context.Response.StatusCode = 416;
                     context.Response.AddHeader(Constants.HeaderContentRanges, Invariant($"bytes */{fileSize}"));
+                    Debug.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
                     return true;
                 }
 
-                if (upperByteIndex == (fileSize - 1))
+                byteLength = upperByteIndex - lowerByteIndex + 1;
+                context.Response.AddHeader(Constants.HeaderContentRanges, Invariant($"bytes {lowerByteIndex}-{upperByteIndex}/{fileSize}"));
+                if (byteLength != fileSize)
                 {
-                    byteLength = upperByteIndex - lowerByteIndex + 1;
-                }
-                else
-                {
-                    byteLength = upperByteIndex - lowerByteIndex + 1;
-                    context.Response.AddHeader(Constants.HeaderContentRanges, Invariant($"bytes {lowerByteIndex}-{upperByteIndex}/{fileSize}"));
                     context.Response.StatusCode = 206;
                 }
             }
@@ -176,16 +178,19 @@ namespace Hspi.Web
 
             context.Response.ContentLength64 = byteLength;
 
+            Debug.WriteLine($"Serving to {context.Request.RemoteEndPoint} for {context.Request.Url} with bytes {byteLength} at offset {lowerByteIndex}");
+
             try
             {
                 await WriteToOutputMemoryStream(context, byteLength, cacheEntry.Buffer, lowerByteIndex, ct).ConfigureAwait(false);
             }
             catch (HttpListenerException ex)
             {
-                // Connection error, nothing else to do
-                System.Diagnostics.Debug.WriteLine(ex.Message);
+                Debug.WriteLine($"Request Type {context.RequestVerb()} from {context.Request.RemoteEndPoint} for {context.Request.Url} bytes {byteLength} at offset {lowerByteIndex} failed with {ex.Message}");
+                return true;
             }
 
+            Debug.WriteLine($"Finished Serving to {context.Request.RemoteEndPoint} for {context.Request.Url} bytes {byteLength} at offset {lowerByteIndex}");
             return true;
         }
 
@@ -194,7 +199,15 @@ namespace Hspi.Web
         {
             checked
             {
-                await context.Response.OutputStream.WriteAsync(buffer, lowerByteIndex, (int)byteLength, ct);
+                const int chunkSize = 4 * 1024;
+
+                while (byteLength > 0)
+                {
+                    int length = Math.Min(chunkSize, (int)byteLength);
+                    await context.Response.OutputStream.WriteAsync(buffer, lowerByteIndex, length, ct);
+                    byteLength -= length;
+                    lowerByteIndex += length;
+                }
             }
         }
 

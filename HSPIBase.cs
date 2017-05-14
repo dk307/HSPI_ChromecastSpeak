@@ -11,8 +11,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
-using Unosquare.Swan;
-
 namespace Hspi
 {
     using static System.FormattableString;
@@ -82,6 +80,9 @@ namespace Hspi
                 HS = HsClient.ServiceProxy;
 
                 var apiVersion = HS.APIVersion; // just to make sure our connection is valid
+
+                hsTraceListener = new HSTraceListener(this as ILogger);
+                Debug.Listeners.Add(hsTraceListener);
             }
             catch (Exception ex)
             {
@@ -116,6 +117,11 @@ namespace Hspi
 
         private void HsClient_Disconnected(object sender, EventArgs e)
         {
+            if (hsTraceListener != null)
+            {
+                Debug.Listeners.Remove(hsTraceListener);
+            }
+
             cancellationTokenSource.Cancel();
         }
 
@@ -203,7 +209,7 @@ namespace Hspi
 
         public override void ShutdownIO()
         {
-            "ShutDown Started".Info();
+            Debug.WriteLine("ShutDown Started");
 
             cancellationTokenSource.Cancel();
 
@@ -214,7 +220,7 @@ namespace Hspi
 
             this.HsClient.Disconnect();
             this.CallbackClient.Disconnect();
-            "ShutDown Finished".Info();
+            Debug.WriteLine("ShutDown Finished");
         }
 
         public override bool SupportsAddDevice() => supportsAddDevice;
@@ -269,28 +275,25 @@ namespace Hspi
 
         public virtual void DebugLog(string message)
         {
-            message.Debug();
             HS.WriteLog(Name, Invariant($"Debug:{message}"));
         }
 
         public void LogError(string message)
         {
-            message.Error();
             HS.WriteLog(Name, Invariant($"Error:{message}"));
         }
 
         public void LogInfo(string message)
         {
-            message.Info();
             HS.WriteLog(Name, message);
         }
 
         public void LogWarning(string message)
         {
-            message.Warn();
             HS.WriteLog(Name, Invariant($"Warning:{message}"));
         }
 
+        private HSTraceListener hsTraceListener;
         private readonly int accessLevel;
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly int capabilities;

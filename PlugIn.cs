@@ -48,7 +48,7 @@ namespace Hspi
 
                 Callback.RegisterProxySpeakPlug(PluginData.PlugInName, string.Empty);
 
-                DebugLog("Plugin Started");
+                LogInfo("Plugin Started");
             }
             catch (Exception ex)
             {

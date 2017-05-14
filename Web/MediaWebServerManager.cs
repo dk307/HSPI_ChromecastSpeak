@@ -73,7 +73,7 @@ namespace Hspi.Web
             }
         }
 
-        public static TimeSpan FileEntryExpiry => TimeSpan.FromSeconds(120);
+        public static TimeSpan FileEntryExpiry => TimeSpan.FromSeconds(1200);
 
         private CancellationToken ShutdownCancellationToken { get; }
         private readonly SemaphoreSlim webServerLock = new SemaphoreSlim(1);

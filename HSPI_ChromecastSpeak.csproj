@@ -113,6 +113,7 @@
     <Compile Include="ExceptionHelper.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />
+    <Compile Include="HSTraceListener.cs" />
     <Compile Include="ILogger.cs" />
     <Compile Include="PlugIn.cs" />
     <Compile Include="PluginConfig.cs" />
