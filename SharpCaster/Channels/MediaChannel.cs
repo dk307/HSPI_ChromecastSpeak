@@ -30,7 +30,6 @@ namespace SharpCaster.Channels
             {
                 Client.MediaStatus = response.status.FirstOrDefault();
             }
-            System.Diagnostics.Debug.WriteLine("Load 00");
 
             if (response.requestId != 0)
             {
@@ -38,12 +37,10 @@ namespace SharpCaster.Channels
                 {
                     if (response.status == null)
                     {
-                        System.Diagnostics.Debug.WriteLine("Load -1");
                         completed.SetException(new MediaLoadException(Client.DeviceUri.ToString(), response.type));
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine("Load +1");
                         completed.SetResult(true);
                     }
                 }
@@ -83,7 +80,6 @@ namespace SharpCaster.Channels
             await Write(MessageFactory.Load(application.TransportId, reqJson), token).ConfigureAwait(false);
             await WaitOnRequestCompletion(requestCompletedSource.Task, token).ConfigureAwait(false);
             await requestCompletedSource.Task;
-            System.Diagnostics.Debug.WriteLine("Load Finished");
         }
     }
 }

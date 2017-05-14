@@ -89,7 +89,6 @@ namespace SharpCaster
         private async Task DisconnectCore(bool sendClose, CancellationToken token)
         {
             await clientConnectLock.WaitAsync(token).ConfigureAwait(false);
-            Debug.WriteLine("DisconnectCore {0}", sendClose);
             try
             {
                 foreach (var channel in Channels)
@@ -101,7 +100,6 @@ namespace SharpCaster
                     await ConnectionChannel.CloseConnection(token).ConfigureAwait(false);
                 }
                 await ChromecastSocketService.Disconnect(token).ConfigureAwait(false);
-                Debug.WriteLine("DisconnectCore Done {0}", sendClose);
             }
             finally
             {
