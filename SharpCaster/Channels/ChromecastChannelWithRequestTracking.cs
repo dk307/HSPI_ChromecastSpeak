@@ -1,12 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using SharpCaster.Exceptions;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpCaster.Channels
 {
-    using System;
-    using SharpCaster.Exceptions;
-
     internal abstract class ChromecastChannelWithRequestTracking : ChromecastChannel
     {
         protected ChromecastChannelWithRequestTracking(ChromeCastClient client, string ns) :

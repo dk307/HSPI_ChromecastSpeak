@@ -5,7 +5,7 @@ namespace Hspi.Voice
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class VoiceData
     {
-        public VoiceData(byte[] data, string mimeType, string extension, double duration)
+        public VoiceData(byte[] data, [AllowNull]string mimeType, string extension, double duration)
         {
             Duration = duration;
             Extension = extension;

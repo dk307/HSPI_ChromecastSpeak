@@ -11,10 +11,5 @@ namespace Hspi
         /// The plugin name
         /// </summary>
         public const string PlugInName = @"Chromecast Speak";
-
-        /// <summary>
-        /// The images path root for devices
-        /// </summary>
-        public static readonly string HSImagesPathRoot = Path.Combine(Path.DirectorySeparatorChar.ToString(), "images", "HomeSeer", "status");
     }
 }

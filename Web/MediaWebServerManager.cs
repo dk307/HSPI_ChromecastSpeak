@@ -40,7 +40,6 @@ namespace Hspi.Web
                 logger.LogInfo(Invariant($"Starting Web Server on {address}:{port}"));
 
                 webServerTask = webServer.StartListening(combinedWebServerTokenSource.Token);
-                Port = port;
             }
             finally
             {
@@ -74,7 +73,6 @@ namespace Hspi.Web
             }
         }
 
-        public int Port { get; private set; }
         public static TimeSpan FileEntryExpiry => TimeSpan.FromSeconds(120);
 
         private CancellationToken ShutdownCancellationToken { get; }

@@ -25,7 +25,7 @@ namespace Hspi.Chromecast
             this.logger = logger;
         }
 
-        public async Task Play(Uri playUri, string mimeType, double duration, double? volume, CancellationToken cancellationToken)
+        public async Task Play(Uri playUri, [AllowNull]string mimeType, double duration, double? volume, CancellationToken cancellationToken)
         {
             logger.DebugLog(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
             if (!Uri.TryCreate(Invariant($"https://{device.DeviceIP}/"), UriKind.Absolute, out Uri deviceUri))

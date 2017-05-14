@@ -11,6 +11,8 @@ using System.Runtime.Caching;
 
 namespace Hspi.Web
 {
+    using static System.FormattableString;
+
     /// <summary>
     /// Represents a simple module to server static files from the file system.
     /// </summary>
@@ -149,21 +151,21 @@ namespace Hspi.Web
 
             if (isPartial)
             {
-                if (upperByteIndex > fileSize)
+                if (upperByteIndex > (fileSize - 1))
                 {
                     context.Response.StatusCode = 416;
-                    context.Response.AddHeader(Constants.HeaderContentRanges, $"bytes */{fileSize}");
+                    context.Response.AddHeader(Constants.HeaderContentRanges, Invariant($"bytes */{fileSize}"));
                     return true;
                 }
 
-                if (upperByteIndex == fileSize)
+                if (upperByteIndex == (fileSize - 1))
                 {
-                    byteLength = fileSize;
+                    byteLength = upperByteIndex - lowerByteIndex + 1;
                 }
                 else
                 {
                     byteLength = upperByteIndex - lowerByteIndex + 1;
-                    context.Response.AddHeader(Constants.HeaderContentRanges, $"bytes {lowerByteIndex}-{upperByteIndex}/{fileSize}");
+                    context.Response.AddHeader(Constants.HeaderContentRanges, Invariant($"bytes {lowerByteIndex}-{upperByteIndex}/{fileSize}"));
                     context.Response.StatusCode = 206;
                 }
             }
@@ -176,11 +178,12 @@ namespace Hspi.Web
 
             try
             {
-                await WriteToOutputMemoryStream(context, byteLength, cacheEntry.Buffer, lowerByteIndex, ct);
+                await WriteToOutputMemoryStream(context, byteLength, cacheEntry.Buffer, lowerByteIndex, ct).ConfigureAwait(false);
             }
-            catch (HttpListenerException)
+            catch (HttpListenerException ex)
             {
                 // Connection error, nothing else to do
+                System.Diagnostics.Debug.WriteLine(ex.Message);
             }
 
             return true;
@@ -246,15 +249,15 @@ namespace Hspi.Web
                  string.IsNullOrWhiteSpace(range[1])) ||
                 (range.Length == 1 && int.TryParse(range[0], out lowerByteIndex)))
             {
-                upperByteIndex = (int)fileSize;
+                upperByteIndex = (int)fileSize - 1;
                 return true;
             }
 
             if (range.Length == 2 && string.IsNullOrWhiteSpace(range[0]) &&
                 int.TryParse(range[1], out upperByteIndex))
             {
-                lowerByteIndex = (int)fileSize - upperByteIndex;
-                upperByteIndex = (int)fileSize;
+                lowerByteIndex = (int)fileSize - upperByteIndex - 1;
+                upperByteIndex = (int)fileSize - 1;
                 return true;
             }
 

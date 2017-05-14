@@ -20,7 +20,7 @@ namespace Hspi.Voice
         public async Task<VoiceData> GenerateVoiceAsWavFile(CancellationToken token)
         {
             logger.DebugLog("Starting Generation of Wav using SAPI");
-            var audioFormat = new SpeechAudioFormatInfo(16000, AudioBitsPerSample.Eight, AudioChannel.Mono);
+            var audioFormat = new SpeechAudioFormatInfo(44100, AudioBitsPerSample.Sixteen, AudioChannel.Stereo);
 
             using (var speechSynthesizer = new SpeechSynthesizer())
             {

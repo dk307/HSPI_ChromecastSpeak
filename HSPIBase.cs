@@ -11,6 +11,8 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
+using Unosquare.Swan;
+
 namespace Hspi
 {
     using static System.FormattableString;
@@ -201,6 +203,8 @@ namespace Hspi
 
         public override void ShutdownIO()
         {
+            "ShutDown Started".Info();
+
             cancellationTokenSource.Cancel();
 
             if (HsClient != null)
@@ -210,6 +214,7 @@ namespace Hspi
 
             this.HsClient.Disconnect();
             this.CallbackClient.Disconnect();
+            "ShutDown Finished".Info();
         }
 
         public override bool SupportsAddDevice() => supportsAddDevice;
@@ -264,25 +269,25 @@ namespace Hspi
 
         public virtual void DebugLog(string message)
         {
-            Trace.WriteLine(message);
+            message.Debug();
             HS.WriteLog(Name, Invariant($"Debug:{message}"));
         }
 
         public void LogError(string message)
         {
-            Trace.TraceError(message);
+            message.Error();
             HS.WriteLog(Name, Invariant($"Error:{message}"));
         }
 
         public void LogInfo(string message)
         {
-            Trace.TraceInformation(message);
+            message.Info();
             HS.WriteLog(Name, message);
         }
 
         public void LogWarning(string message)
         {
-            Trace.TraceWarning(message);
+            message.Warn();
             HS.WriteLog(Name, Invariant($"Warning:{message}"));
         }
 

@@ -149,9 +149,20 @@ namespace Hspi
 
         private async Task Speak(string text, IEnumerable<ChromecastDevice> devices)
         {
-            var voiceGenerator = new VoiceGenerator(this, text);
-            var voiceData = await voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken);
-            var uri = await webServerManager.Add(voiceData.Data, voiceData.Extension);
+            bool isFileName = IsReferingToTextFile(text);
+
+            VoiceData voiceData;
+            if (isFileName)
+            {
+                voiceData = await VoiceDataFromFile.LoadFromFile(text, ShutdownCancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                var voiceGenerator = new VoiceGenerator(this, text);
+                voiceData = await voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken).ConfigureAwait(false);
+            }
+
+            var uri = await webServerManager.Add(voiceData.Data, voiceData.Extension).ConfigureAwait(false);
 
             List<Task> playTasks = new List<Task>();
             foreach (var device in devices)
@@ -165,7 +176,22 @@ namespace Hspi
                 playTasks.Add(chromecast.Play(uri, voiceData.MimeType, voiceData.Duration, device.Volume, combinedStopTokenSource.Token));
             }
 
-            await Task.WhenAll(playTasks.ToArray());
+            await Task.WhenAll(playTasks.ToArray()).ConfigureAwait(false);
+        }
+
+        private bool IsReferingToTextFile(string text)
+        {
+            switch (HS.GetOSType())
+            {
+                case eOSType.windows:
+                    return (text.Length > 2) && text.Substring(1, 2).Equals(":\\");
+
+                case eOSType.linux:
+                    return (text.Length > 1) && text.Substring(0, 1).Equals("/");
+
+                default:
+                    throw new ArgumentException("Unknown OS Type");
+            }
         }
 
         private void RegisterConfigPage()
