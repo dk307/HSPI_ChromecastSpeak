@@ -47,6 +47,9 @@ namespace Hspi
                 ushort? volume = GetValue<ushort?>(VolumeKey, null, deviceId);
                 devices.Add(deviceId, new ChromecastDevice(deviceId, name, deviceIP, volume));
             }
+
+            // Auto create entries in INI File
+            WebServerPort = this.webServerPort;
         }
 
         /// <summary>

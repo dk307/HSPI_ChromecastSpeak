@@ -155,6 +155,10 @@ namespace Hspi
             {
                 this.pluginConfig.DebugLogging = parts[NameToId(DebugLoggingId)] == "checked";
             }
+            else if (form == NameToIdWithPrefix(FormatSpeechId))
+            {
+                this.pluginConfig.ForwardSpeach = parts[NameToId(FormatSpeechId)] == "checked";
+            }
 
             return base.postBackProc(Name, data, user, userRights);
         }
@@ -166,6 +170,19 @@ namespace Hspi
             StringBuilder stb = new StringBuilder();
 
             stb.Append(@"<div>");
+
+            // Setting
+            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmSettings", "Id", "Post"));
+            stb.Append(@"<table class='full_width_table'");
+            stb.Append("<tr height='2'><td width=25%></td><td></td></tr>");
+            stb.Append("<tr><td class='tableheader' colspan=2>Settings</td></tr>");
+            stb.Append(Invariant($"<tr><td colspan=1>Debug Logging Enabled:</td><td colspan=1>{FormCheckBox(DebugLoggingId, string.Empty, this.pluginConfig.DebugLogging, true)}</ td ></ tr > "));
+            stb.Append(Invariant($"<tr><td colspan=1>Foward Speech To HomeSeer:</td><td colspan=1>{FormCheckBox(FormatSpeechId, string.Empty, this.pluginConfig.ForwardSpeach, true)}</ td ></ tr > "));
+            stb.Append("<tr height='5'><td colspan=2></td></tr>");
+            stb.Append(@"</table");
+            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
+
+            //Device List
             stb.Append(@"<table class='full_width_table'");
             stb.Append("<tr height='5'><td colspan=4></td></tr>");
             stb.Append("<tr><td class='tableheader' colspan=4>Devices</td></tr>");
@@ -188,13 +205,10 @@ namespace Hspi
             }
             stb.Append(Invariant($"<tr><td colspan=4>{PageTypeButton("Add New Device", AddNewName, EditDevicePageType)}</td><td></td></tr>"));
             stb.Append("<tr height='5'><td colspan=4></td></tr>");
-            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmSettings", "Id", "Post"));
-            stb.Append(Invariant($"<tr><td colspan=4>Debug Logging Enabled:{FormCheckBox(DebugLoggingId, string.Empty, this.pluginConfig.DebugLogging, true)}</ td ></ tr > "));
-            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
-
             stb.Append(Invariant($"<tr><td colspan=4></td></tr>"));
             stb.Append(@"<tr height='5'><td colspan=4></td></tr>");
             stb.Append(@" </table>");
+
             stb.Append(@"</div>");
 
             return stb.ToString();
@@ -305,6 +319,7 @@ namespace Hspi
         private const string DeviceIdId = "DeviceIdId";
         private const string PageTypeId = "type";
         private const string AddNewName = "Add New";
+        private const string FormatSpeechId = "FormatSpeechId";
         private const string DebugLoggingId = "DebugLoggingId";
         private const string DeviceIPId = "DeviceIPId";
         private const string SaveErrorDivId = "message_id";
