@@ -26,7 +26,7 @@ namespace Hspi.Chromecast
             this.logger = logger;
         }
 
-        public async Task Play(Uri playUri, [AllowNull]string mimeType, double duration, double? volume, CancellationToken cancellationToken)
+        public async Task Play(Uri playUri, TimeSpan? duration, double? volume, CancellationToken cancellationToken)
         {
             Debug.WriteLine(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
             if (!Uri.TryCreate(Invariant($"https://{device.DeviceIP}/"), UriKind.Absolute, out Uri deviceUri))
@@ -78,18 +78,29 @@ namespace Hspi.Chromecast
                     Debug.WriteLine(Invariant($"Launched default app on Chromecast {device.Name}"));
 
                     Debug.WriteLine(Invariant($"Loading Media in on Chromecast {device.Name}"));
-                    await client.MediaChannel.LoadMedia(defaultApplication, playUri, mimeType, cancellationToken,
-                                                        duration: duration);
+                    await client.MediaChannel.LoadMedia(defaultApplication, playUri, null, cancellationToken,
+                                                        duration: duration.HasValue ? duration.Value.TotalSeconds : 0D);
                     Debug.WriteLine(Invariant($"Loaded Media in on Chromecast {device.Name}"));
 
-                    Debug.WriteLine(Invariant($"Disconnecting Chromecast {device.Name}"));
-                    await client.Disconnect(cancellationToken).ConfigureAwait(false);
-                    Debug.WriteLine(Invariant($"Disconnected Chromecast {device.Name}"));
+                    var itemId = client.MediaStatus?.CurrentItemId;
+
+                    bool played;
+                    do
+                    {
+                        await client.MediaChannel.GetMediaStatus(defaultApplication.TransportId, cancellationToken).ConfigureAwait(false);
+
+                        played = (client.MediaStatus != null) &&
+                                  (client.MediaStatus.CurrentItemId >= itemId.Value) &&
+                                  (client.MediaStatus.IdleReason == SharpCaster.Models.MediaStatus.IdleReason.FINISHED);
+
+                        await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
+                    } while (!played);
                 }
-                catch
+                finally
                 {
-                    await client.Abort().ConfigureAwait(false);
-                    throw;
+                    Debug.WriteLine(Invariant($"Disconnecting Chromecast {device.Name}"));
+                    await client.Abort(cancellationToken).ConfigureAwait(false);
+                    Debug.WriteLine(Invariant($"Disconnected Chromecast {device.Name}"));
                 }
             }
         }

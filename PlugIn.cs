@@ -162,7 +162,7 @@ namespace Hspi
                 voiceData = await voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken).ConfigureAwait(false);
             }
 
-            var uri = await webServerManager.Add(voiceData.Data, voiceData.Extension).ConfigureAwait(false);
+            var uri = await webServerManager.Add(voiceData.Data, voiceData.Extension, voiceData.Duration).ConfigureAwait(false);
 
             List<Task> playTasks = new List<Task>();
             foreach (var device in devices)
@@ -171,9 +171,19 @@ namespace Hspi
                 var combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, ShutdownCancellationToken);
 
                 // Set a timeout for 60 seconds for speak to finish to detect hangs
+                TimeSpan timeout = TimeSpan.FromSeconds(60);
+                if (voiceData.Duration.HasValue)
+                {
+                    timeout.Add(voiceData.Duration.Value);
+                }
+                else
+                {
+                    timeout.Add(MediaWebServerManager.FileEntryExpiry);
+                }
+
                 stopTokenSource.CancelAfter(TimeSpan.FromSeconds(60));
                 SimpleChromecast chromecast = new SimpleChromecast(this, device);
-                playTasks.Add(chromecast.Play(uri, voiceData.MimeType, voiceData.Duration, device.Volume, combinedStopTokenSource.Token));
+                playTasks.Add(chromecast.Play(uri, voiceData.Duration, device.Volume, combinedStopTokenSource.Token));
             }
 
             await Task.WhenAll(playTasks.ToArray()).ConfigureAwait(false);

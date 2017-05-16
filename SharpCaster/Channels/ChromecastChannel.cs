@@ -28,7 +28,7 @@ namespace SharpCaster.Channels
             await Client.ChromecastSocketService.Write(bytes, token);
         }
 
-        public abstract void Abort();
+        public abstract Task Abort();
 
         internal abstract void OnMessageReceived(CastMessage castMessage);
     }

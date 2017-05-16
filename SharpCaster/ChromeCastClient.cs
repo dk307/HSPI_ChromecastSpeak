@@ -91,10 +91,14 @@ namespace SharpCaster
             await clientConnectLock.WaitAsync(token).ConfigureAwait(false);
             try
             {
+                List<Task> abortTasks = new List<Task>();
                 foreach (var channel in Channels)
                 {
-                    channel.Abort();
+                    abortTasks.Add(channel.Abort());
                 }
+
+                await Task.WhenAll(abortTasks.ToArray()).ConfigureAwait(false);
+
                 if (sendClose)
                 {
                     await ConnectionChannel.CloseConnection(token).ConfigureAwait(false);
@@ -172,6 +176,7 @@ namespace SharpCaster
                 if (disposing)
                 {
                     ChromecastSocketService?.Dispose();
+                    clientConnectLock.Dispose();
                 }
 
                 disposedValue = true;

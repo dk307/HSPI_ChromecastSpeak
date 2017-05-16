@@ -26,7 +26,7 @@ namespace SharpCaster.Channels
             var json = castMessage.PayloadUtf8;
             var response = JsonConvert.DeserializeObject<MediaStatusResponse>(json);
 
-            if (response.status != null)
+            if ((response.status != null) && (response.status.Count > 0))
             {
                 Client.MediaStatus = response.status.FirstOrDefault();
             }

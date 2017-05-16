@@ -6,6 +6,7 @@ using SharpCaster.Channels;
 using System.Net.Sockets;
 using NullGuard;
 using Hspi;
+using System.Diagnostics;
 
 namespace SharpCaster.Services
 {
@@ -44,26 +45,30 @@ namespace SharpCaster.Services
 
         private async Task ProcessRead(Func<Stream, bool, CancellationToken, Task> packetReader, CancellationToken combinedToken)
         {
-            while (!combinedToken.IsCancellationRequested)
+            try
             {
-                var sizeBuffer = new byte[4];
-                byte[] messageBuffer = { };
-                // First message should contain the size of message
-                await client.Stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, combinedToken).ConfigureAwait(false);
-                // The message is little-endian (that is, little end first),
-                // reverse the byte array.
-                Array.Reverse(sizeBuffer);
-                //Retrieve the size of message
-                var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
-                messageBuffer = new byte[messageSize];
-                await client.Stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
-                using (var answer = new MemoryStream(messageBuffer.Length))
+                while (!combinedToken.IsCancellationRequested)
                 {
-                    await answer.WriteAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
-                    answer.Position = 0;
-                    await packetReader(answer, true, combinedToken);
+                    var sizeBuffer = new byte[4];
+                    byte[] messageBuffer = { };
+                    // First message should contain the size of message
+                    await client.Stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, combinedToken).ConfigureAwait(false);
+                    // The message is little-endian (that is, little end first),
+                    // reverse the byte array.
+                    Array.Reverse(sizeBuffer);
+                    //Retrieve the size of message
+                    var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
+                    messageBuffer = new byte[messageSize];
+                    await client.Stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
+                    using (var answer = new MemoryStream(messageBuffer.Length))
+                    {
+                        await answer.WriteAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
+                        answer.Position = 0;
+                        await packetReader(answer, true, combinedToken).ConfigureAwait(false);
+                    }
                 }
             }
+            catch (ObjectDisposedException) { }
         }
 
         public async Task Disconnect(CancellationToken token)
@@ -74,8 +79,8 @@ namespace SharpCaster.Services
                 if (client != null)
                 {
                     stopTokenSource.Cancel();
+                    client.Disconnect();   //  this should be called after wait, but adds few seconds to shutdown
                     await readTask.WaitForFinishNoCancelException().ConfigureAwait(false);
-                    client.Disconnect();
                 }
             }
             finally
@@ -114,11 +119,9 @@ namespace SharpCaster.Services
             {
                 if (disposing)
                 {
-                    //stopTokenSource?.Cancel();
-                    //runTaskCompleted?.Task.Wait();
-
                     combinedStopTokenSource?.Dispose();
                     stopTokenSource?.Dispose();
+                    readTask?.Dispose();
                     client?.Dispose();
                     clientWriteLock.Dispose();
                     clientConnectLock.Dispose();

@@ -44,8 +44,8 @@ namespace Hspi
                 IPAddress.TryParse(ipAddressString, out var deviceIP);
 
                 string name = GetValue(NameKey, string.Empty, deviceId);
-                ushort? volume = GetValue<ushort?>(VolumeKey, null, deviceId);
-                devices.Add(deviceId, new ChromecastDevice(deviceId, name, deviceIP, volume));
+                var volume = GetValue<short>(VolumeKey, -1, deviceId);
+                devices.Add(deviceId, new ChromecastDevice(deviceId, name, deviceIP, volume == -1 ? null : (ushort?)volume));
             }
 
             // Auto create entries in INI File

@@ -199,7 +199,7 @@ namespace Hspi.Web
         {
             checked
             {
-                const int chunkSize = 4 * 1024;
+                const int chunkSize = 512 * 1024;
 
                 while (byteLength > 0)
                 {

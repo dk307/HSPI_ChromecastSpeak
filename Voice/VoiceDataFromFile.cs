@@ -24,7 +24,7 @@ namespace Hspi.Voice
                 await stream.ReadAsync(data, 0, (int)stream.Length);
             }
 
-            return new VoiceData(data, null, Path.GetExtension(filePath).Replace(".", string.Empty), 0D);
+            return new VoiceData(data, Path.GetExtension(filePath).Replace(".", string.Empty), null);
         }
     }
 }

@@ -26,7 +26,7 @@ namespace SharpCaster.Services
             var canceller = cancellationToken.Register(() => ret.SetCanceled());
 
             // if cancellation comes before connect completes, we honour it
-            var okOrCancelled = await Task.WhenAny(connectTask, ret.Task);
+            var okOrCancelled = await Task.WhenAny(connectTask, ret.Task).ConfigureAwait(false);
 
             if (okOrCancelled == ret.Task)
             {
@@ -48,9 +48,7 @@ namespace SharpCaster.Services
             if (okOrCancelled.IsFaulted)
                 throw okOrCancelled.Exception.InnerException;
 
-            writeStream = tcpClient.GetStream();
-
-            var secureStream = new SslStream(writeStream, true, new RemoteCertificateValidationCallback(ValidateServerCertificate));
+            var secureStream = new SslStream(tcpClient.GetStream(), true, new RemoteCertificateValidationCallback(ValidateServerCertificate));
             secureStream.AuthenticateAsClient(address, null, System.Security.Authentication.SslProtocols.Tls, false);
             sslStream = secureStream;
         }
@@ -74,7 +72,6 @@ namespace SharpCaster.Services
         public void Disconnect()
         {
             sslStream?.Close();
-            writeStream?.Close();
             tcpClient?.Close();
         }
 
@@ -107,10 +104,6 @@ namespace SharpCaster.Services
                     {
                         sslStream.Dispose();
                     }
-                    if (writeStream != null)
-                    {
-                        writeStream.Dispose();
-                    }
                     if (tcpClient != null)
                     {
                         tcpClient.Dispose();
@@ -122,7 +115,6 @@ namespace SharpCaster.Services
 
         private readonly TcpClient tcpClient = new TcpClient();
         private SslStream sslStream;
-        private NetworkStream writeStream;
         private bool disposedValue = false;
     }
 }

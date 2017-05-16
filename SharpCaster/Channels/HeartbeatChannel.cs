@@ -16,10 +16,10 @@ namespace SharpCaster.Channels
         {
         }
 
-        public override void Abort()
+        public override Task Abort()
         {
             abortCancellationSource.Cancel();
-            heartBeatTask.WaitForFinishNoCancelException().Wait();
+            return heartBeatTask.WaitForFinishNoCancelException();
         }
 
         internal override void OnMessageReceived(CastMessage castMessage)

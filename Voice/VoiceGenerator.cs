@@ -4,6 +4,7 @@ using System.Speech.Synthesis;
 using System.Threading;
 using System.Threading.Tasks;
 using NullGuard;
+using System;
 
 namespace Hspi.Voice
 {
@@ -42,8 +43,8 @@ namespace Hspi.Voice
 
                     logger.DebugLog("Finished Generation of Wav using SAPI");
 
-                    return new VoiceData(streamAudio.ToArray(), "audio/wav", "wav",
-                                         progressEvents != null ? progressEvents.AudioPosition.TotalSeconds : 0D);
+                    return new VoiceData(streamAudio.ToArray(), "wav",
+                                         progressEvents != null ? (TimeSpan?)progressEvents.AudioPosition : null);
                 }
             }
         }

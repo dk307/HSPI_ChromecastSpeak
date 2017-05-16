@@ -47,7 +47,7 @@ namespace Hspi.Web
             }
         }
 
-        public async Task<Uri> Add(byte[] buffer, string extension)
+        public async Task<Uri> Add(byte[] buffer, string extension, TimeSpan? duration)
         {
             // This lock allows us to wait till server has started
             await webServerLock.WaitAsync(ShutdownCancellationToken);
@@ -61,7 +61,12 @@ namespace Hspi.Web
                 logger.DebugLog(Invariant($"Adding {path} to Web Server with {buffer.Length} Audio bytes"));
 
                 pathNumber++;
-                webServer.Add(buffer, DateTimeOffset.Now, path, DateTimeOffset.Now.Add(FileEntryExpiry));
+                var expiry = DateTimeOffset.Now.Add(FileEntryExpiry);
+                if (duration.HasValue)
+                {
+                    expiry.Add(duration.Value);
+                }
+                webServer.Add(buffer, DateTimeOffset.Now, path, expiry);
 
                 UriBuilder builder = new UriBuilder(webServer.UrlPrefix);
                 builder.Path = path;
@@ -73,7 +78,7 @@ namespace Hspi.Web
             }
         }
 
-        public static TimeSpan FileEntryExpiry => TimeSpan.FromSeconds(1200);
+        public static TimeSpan FileEntryExpiry => TimeSpan.FromSeconds(120);
 
         private CancellationToken ShutdownCancellationToken { get; }
         private readonly SemaphoreSlim webServerLock = new SemaphoreSlim(1);

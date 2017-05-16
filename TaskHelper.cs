@@ -12,7 +12,7 @@ namespace Hspi
         {
             try
             {
-                await task;
+                await task.ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {

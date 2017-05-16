@@ -35,8 +35,9 @@ namespace SharpCaster.Channels
             };
         }
 
-        public override void Abort()
+        public override Task Abort()
         {
+            return Task.FromResult(true);
         }
 
         public async void OpenConnection(CancellationToken token)

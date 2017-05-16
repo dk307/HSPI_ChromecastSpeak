@@ -262,6 +262,10 @@ namespace Hspi
                     }
                     CallbackClient?.Dispose();
                     cancellationTokenSource.Dispose();
+                    if (hsTraceListener != null)
+                    {
+                        hsTraceListener.Dispose();
+                    }
                 }
                 disposedValue = true;
             }

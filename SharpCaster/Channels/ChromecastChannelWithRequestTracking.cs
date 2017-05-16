@@ -12,9 +12,14 @@ namespace SharpCaster.Channels
         {
         }
 
-        public override void Abort()
+        public override Task Abort()
         {
-            completedListLock.Wait();
+            return AbortAsync();
+        }
+
+        private async Task AbortAsync()
+        {
+            await completedListLock.WaitAsync();
             aborted = true;
             try
             {
