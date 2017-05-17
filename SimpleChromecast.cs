@@ -38,32 +38,40 @@ namespace Hspi.Chromecast
 
             using (var client = new ChromeCastClient(deviceUri))
             {
-                await Connect(client, cancellationToken);
+                await Connect(client, cancellationToken).ConfigureAwait(false);
 
                 try
                 {
-                    var defaultApplication = await LaunchApplication(client, cancellationToken);
+                    var defaultApplication = await LaunchApplication(client, cancellationToken).ConfigureAwait(false);
 
+                    await client.MediaChannel.GetMediaStatus(defaultApplication.TransportId, cancellationToken).ConfigureAwait(false);
+                    var currentVolume = client.ChromecastStatus?.Volume;
                     if (volume.HasValue)
                     {
-                        await client.ReceiverChannel.SetVolume(volume / 100, false, cancellationToken);
+                        await client.ReceiverChannel.SetVolume(volume / 100, false, cancellationToken).ConfigureAwait(false);
                     }
 
-                    await LoadMedia(client, defaultApplication, playUri, duration, cancellationToken);
+                    await LoadMedia(client, defaultApplication, playUri, duration, cancellationToken).ConfigureAwait(false);
 
                     var itemId = client.MediaStatus?.CurrentItemId;
 
                     bool played;
+                    await client.MediaChannel.GetMediaStatus(defaultApplication.TransportId, cancellationToken).ConfigureAwait(false);
                     do
                     {
-                        await client.MediaChannel.GetMediaStatus(defaultApplication.TransportId, cancellationToken).ConfigureAwait(false);
-
                         played = (client.MediaStatus != null) &&
                                   (client.MediaStatus.CurrentItemId >= itemId.Value) &&
                                   (client.MediaStatus.IdleReason == SharpCaster.Models.MediaStatus.IdleReason.FINISHED);
 
                         await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
                     } while (!played);
+
+                    // Restore the existing volume
+                    if (volume.HasValue && (currentVolume != null))
+                    {
+                        await client.ReceiverChannel.SetVolume(currentVolume.level, currentVolume.muted, cancellationToken)
+                                                    .ConfigureAwait(false);
+                    }
 
                     this.logger.LogInfo(Invariant($"Played Speech on Chromecast {device.Name}"));
                 }

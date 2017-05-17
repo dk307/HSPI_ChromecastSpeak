@@ -8,6 +8,10 @@ namespace SharpCaster.Models.ChromecastRequests
         public ConnectRequest()
             : base("CONNECT")
         {
+            UserAgent = "Homeseer Speak PlugIn";
         }
+
+        [DataMember(Name = "userAgent")]
+        public string UserAgent { get; set; }
     }
 }

@@ -9,9 +9,12 @@ namespace SharpCaster.Models.ChromecastStatus
         public List<ChromecastApplication> Applications { get; set; }
 
         [JsonProperty("isActiveInput")]
-        public bool IsActiveInput { get; set; }
+        public bool? IsActiveInput { get; set; }
 
         [JsonProperty("isStandBy")]
-        public bool IsStandBy { get; set; }
+        public bool? IsStandBy { get; set; }
+
+        [JsonProperty("volume")]
+        public Volume Volume { get; set; }
     }
 }
