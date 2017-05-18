@@ -171,17 +171,13 @@ namespace Hspi
                 var combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, ShutdownCancellationToken);
 
                 // Set a timeout for 60 seconds for speak to finish to detect hangs
-                TimeSpan timeout = TimeSpan.FromSeconds(60);
+                TimeSpan timeout = MediaWebServerManager.FileEntryExpiry;
                 if (voiceData.Duration.HasValue)
                 {
                     timeout.Add(voiceData.Duration.Value);
                 }
-                else
-                {
-                    timeout.Add(MediaWebServerManager.FileEntryExpiry);
-                }
 
-                stopTokenSource.CancelAfter(TimeSpan.FromSeconds(60));
+                stopTokenSource.CancelAfter(timeout);
                 SimpleChromecast chromecast = new SimpleChromecast(this, device);
                 playTasks.Add(chromecast.Play(uri, voiceData.Duration, device.Volume, combinedStopTokenSource.Token));
             }
