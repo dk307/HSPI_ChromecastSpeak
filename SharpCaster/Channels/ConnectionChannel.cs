@@ -1,13 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using NullGuard;
 using SharpCaster.Models;
-using SharpCaster.Models.ChromecastStatus;
+using System;
 using System.Threading;
-using SharpCaster.Models.ChromecastRequests;
-using System.Collections.Concurrent;
-using NullGuard;
+using System.Threading.Tasks;
 
 namespace SharpCaster.Channels
 {
@@ -27,7 +22,7 @@ namespace SharpCaster.Channels
                 {
                     try
                     {
-                        await Client.Abort();
+                        await Client.Abort().ConfigureAwait(false);
                     }
                     catch (ObjectDisposedException)
                     { }

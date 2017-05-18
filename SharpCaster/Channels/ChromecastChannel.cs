@@ -1,8 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using NullGuard;
 using SharpCaster.Models;
 using System.Threading;
-using NullGuard;
+using System.Threading.Tasks;
 
 namespace SharpCaster.Channels
 {
@@ -25,7 +24,7 @@ namespace SharpCaster.Channels
                 message.Namespace = Namespace;
             }
             var bytes = message.ToProto();
-            await Client.ChromecastSocketService.Write(bytes, token);
+            await Client.ChromecastSocketService.Write(bytes, token).ConfigureAwait(false);
         }
 
         public abstract Task Abort();
