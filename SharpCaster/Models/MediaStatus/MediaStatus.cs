@@ -6,8 +6,6 @@ namespace SharpCaster.Models.MediaStatus
 {
     internal class MediaStatus
     {
-        //TODO this lowerCamelCase to UpperCamelCase could be done by serializer settings
-        //TODO instead of these properties
         [JsonProperty("mediaSessionId")]
         public int MediaSessionId { get; set; }
 
