@@ -96,7 +96,7 @@ namespace Hspi.Web
 
         private async Task<bool> HandleGet(HttpListenerContext context, CancellationToken ct, bool sendBuffer = true)
         {
-            Debug.WriteLine($"Request Type {context.RequestVerb()} from {context.Request.RemoteEndPoint} for {context.Request.Url}");
+            Trace.WriteLine($"Request Type {context.RequestVerb()} from {context.Request.RemoteEndPoint} for {context.Request.Url}");
 
             var requestedPath = GetUrlPath(context);
 
@@ -112,7 +112,7 @@ namespace Hspi.Web
             if (cacheItem == null || cacheItem.Value == null)
             {
                 context.Response.StatusCode = (int)System.Net.HttpStatusCode.NotFound;
-                Debug.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
+                Trace.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
                 return true;
             }
 
@@ -135,7 +135,7 @@ namespace Hspi.Web
                 (eTagValid || context.RequestHeader(Constants.HeaderIfModifiedSince).Equals(utcFileDateString)))
             {
                 SetStatusCode304(context);
-                Debug.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
+                Trace.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
                 return true;
             }
 
@@ -160,7 +160,7 @@ namespace Hspi.Web
                 {
                     context.Response.StatusCode = 416;
                     context.Response.AddHeader(Constants.HeaderContentRanges, Invariant($"bytes */{fileSize}"));
-                    Debug.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
+                    Trace.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
                     return true;
                 }
 
@@ -178,7 +178,7 @@ namespace Hspi.Web
 
             context.Response.ContentLength64 = byteLength;
 
-            Debug.WriteLine($"Serving to {context.Request.RemoteEndPoint} for {context.Request.Url} with bytes {byteLength} at offset {lowerByteIndex}");
+            Trace.WriteLine($"Serving to {context.Request.RemoteEndPoint} for {context.Request.Url} with bytes {byteLength} at offset {lowerByteIndex}");
 
             try
             {
@@ -186,11 +186,11 @@ namespace Hspi.Web
             }
             catch (HttpListenerException ex)
             {
-                Debug.WriteLine($"Request Type {context.RequestVerb()} from {context.Request.RemoteEndPoint} for {context.Request.Url} bytes {byteLength} at offset {lowerByteIndex} failed with {ex.Message}");
+                Trace.WriteLine($"Request Type {context.RequestVerb()} from {context.Request.RemoteEndPoint} for {context.Request.Url} bytes {byteLength} at offset {lowerByteIndex} failed with {ex.Message}");
                 return true;
             }
 
-            Debug.WriteLine($"Finished Serving to {context.Request.RemoteEndPoint} for {context.Request.Url} bytes {byteLength} at offset {lowerByteIndex}");
+            Trace.WriteLine($"Finished Serving to {context.Request.RemoteEndPoint} for {context.Request.Url} bytes {byteLength} at offset {lowerByteIndex}");
             return true;
         }
 

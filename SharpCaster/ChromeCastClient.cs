@@ -141,7 +141,7 @@ namespace SharpCaster
                 var entireMessageArray = entireMessage.ToArray();
                 var castMessage = entireMessageArray.ToCastMessage();
                 if (string.IsNullOrEmpty(castMessage?.Namespace)) return;
-                Debug.WriteLine("Received: " + castMessage.GetJsonType());
+                Trace.WriteLine("Received: " + castMessage.GetJsonType());
                 ReceivedMessage(castMessage);
             }
             catch (Exception ex)
@@ -151,7 +151,7 @@ namespace SharpCaster
                 // by the software in your host machine. (Exception from HRESULT: 0x80072745)"}
 
                 // Log these bytes
-                Debug.WriteLine(ex);
+                Trace.WriteLine(ex);
             }
         }
 

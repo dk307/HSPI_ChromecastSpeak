@@ -30,7 +30,7 @@ namespace Hspi.Chromecast
 
         public async Task Play(Uri playUri, TimeSpan? duration, double? volume, CancellationToken cancellationToken)
         {
-            Debug.WriteLine(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
+            Trace.WriteLine(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
             if (!Uri.TryCreate(Invariant($"https://{device.DeviceIP}/"), UriKind.Absolute, out Uri deviceUri))
             {
                 throw new HspiException(Invariant($"Failed to create Uri for Chromecast {device.Name} on {device.DeviceIP}"));
@@ -77,9 +77,9 @@ namespace Hspi.Chromecast
                 }
                 finally
                 {
-                    Debug.WriteLine(Invariant($"Disconnecting Chromecast {device.Name}"));
+                    Trace.WriteLine(Invariant($"Disconnecting Chromecast {device.Name}"));
                     await client.Abort(cancellationToken).ConfigureAwait(false);
-                    Debug.WriteLine(Invariant($"Disconnected Chromecast {device.Name}"));
+                    Trace.WriteLine(Invariant($"Disconnected Chromecast {device.Name}"));
                 }
             }
         }
@@ -87,17 +87,17 @@ namespace Hspi.Chromecast
         private async Task LoadMedia(ChromeCastClient client, ChromecastApplication defaultApplication, Uri playUri,
             TimeSpan? duration, CancellationToken cancellationToken)
         {
-            Debug.WriteLine(Invariant($"Loading Media in on Chromecast {device.Name}"));
+            Trace.WriteLine(Invariant($"Loading Media in on Chromecast {device.Name}"));
             await client.MediaChannel.LoadMedia(defaultApplication, playUri, null, cancellationToken,
                                                 duration: duration.HasValue ? duration.Value.TotalSeconds : 0D);
-            Debug.WriteLine(Invariant($"Loaded Media in on Chromecast {device.Name}"));
+            Trace.WriteLine(Invariant($"Loaded Media in on Chromecast {device.Name}"));
         }
 
         private async Task<ChromecastApplication> LaunchApplication(ChromeCastClient client, CancellationToken cancellationToken)
         {
             await client.ReceiverChannel.GetChromecastStatus(cancellationToken).ConfigureAwait(false);
 
-            Debug.WriteLine(Invariant($"Launching default app on Chromecast {device.Name}"));
+            Trace.WriteLine(Invariant($"Launching default app on Chromecast {device.Name}"));
             const string defaultAppId = "CC1AD845";
 
             var defaultApplication = client.ChromecastStatus?.Applications?.FirstOrDefault((app) => { return app.AppId == defaultAppId; });
@@ -108,7 +108,7 @@ namespace Hspi.Chromecast
             }
             else
             {
-                Debug.WriteLine(Invariant($"Default app is already running on Chromecast {device.Name}"));
+                Trace.WriteLine(Invariant($"Default app is already running on Chromecast {device.Name}"));
             }
 
             if (defaultApplication == null)
@@ -118,20 +118,20 @@ namespace Hspi.Chromecast
 
             await client.ConnectionChannel.ConnectWithDestination(defaultApplication.TransportId, cancellationToken);
 
-            Debug.WriteLine(Invariant($"Launched default app on Chromecast {device.Name}"));
+            Trace.WriteLine(Invariant($"Launched default app on Chromecast {device.Name}"));
             return defaultApplication;
         }
 
         private async Task Connect(ChromeCastClient client, CancellationToken cancellationToken)
         {
-            Debug.WriteLine(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
+            Trace.WriteLine(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
             connectedSource = new TaskCompletionSource<bool>(cancellationToken);
             client.ConnectedChanged += Client_ConnectedChanged;
             await client.ConnectChromecast(cancellationToken).ConfigureAwait(false);
             await WaitOnRequestCompletion(connectedSource.Task, cancellationToken).ConfigureAwait(false);
             client.ConnectedChanged -= Client_ConnectedChanged;
 
-            Debug.WriteLine(Invariant($"Connected to Chromecast {device.Name} on {device.DeviceIP}"));
+            Trace.WriteLine(Invariant($"Connected to Chromecast {device.Name} on {device.DeviceIP}"));
         }
 
         private void Client_ConnectedChanged(object sender, bool connected)

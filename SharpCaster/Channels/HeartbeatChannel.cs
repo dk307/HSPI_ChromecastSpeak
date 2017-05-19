@@ -24,7 +24,7 @@ namespace SharpCaster.Channels
 
         internal override void OnMessageReceived(CastMessage castMessage)
         {
-            Debug.WriteLine(castMessage.GetJsonType());
+            Trace.WriteLine(castMessage.GetJsonType());
             if (Client.Connected || castMessage.GetJsonType() != "PONG") return;
             Client.Connected = true;
         }

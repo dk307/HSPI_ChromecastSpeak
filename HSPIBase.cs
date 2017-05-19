@@ -209,7 +209,7 @@ namespace Hspi
 
         public override void ShutdownIO()
         {
-            Debug.WriteLine("ShutDown Started");
+            Trace.WriteLine("ShutDown Started");
 
             cancellationTokenSource.Cancel();
 
@@ -220,7 +220,7 @@ namespace Hspi
 
             this.HsClient.Disconnect();
             this.CallbackClient.Disconnect();
-            Debug.WriteLine("ShutDown Finished");
+            Trace.WriteLine("ShutDown Finished");
         }
 
         public override bool SupportsAddDevice() => supportsAddDevice;
