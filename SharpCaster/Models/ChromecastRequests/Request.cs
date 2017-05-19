@@ -1,20 +1,16 @@
-using System.Runtime.Serialization;
-using Newtonsoft.Json;
+ using Newtonsoft.Json;
 
 namespace SharpCaster.Models.ChromecastRequests
 {
-    [DataContract]
-    public abstract class Request
+     public abstract class Request
     {
         protected Request(string requestType)
         {
             RequestType = requestType;
-
         }
 
-        [DataMember(Name = "type")]
+        [JsonProperty("type")]
         public string RequestType { get; set; }
-
 
         public string ToJson()
         {

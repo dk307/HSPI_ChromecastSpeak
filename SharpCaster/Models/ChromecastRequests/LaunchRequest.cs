@@ -1,9 +1,8 @@
-﻿using System.Runtime.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace SharpCaster.Models.ChromecastRequests
 {
-    [DataContract]
-    internal class LaunchRequest : RequestWithId
+     internal class LaunchRequest : RequestWithId
     {
         public LaunchRequest(string appId, int requestId)
             : base("LAUNCH", requestId)
@@ -11,7 +10,7 @@ namespace SharpCaster.Models.ChromecastRequests
             ApplicationId = appId;
         }
 
-        [DataMember(Name = "appId")]
+        [JsonProperty("appId")]
         public string ApplicationId { get; set; }
     }
 }

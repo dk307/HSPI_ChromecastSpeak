@@ -1,32 +1,31 @@
-﻿using System.Runtime.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace SharpCaster.Models.MediaStatus
 {
-    [DataContract]
     internal class Track
     {
-        [DataMember(Name = "customData")]
+        [JsonProperty("customData")]
         public object CustomData { get; set; }
 
-        [DataMember(Name = "language")]
+        [JsonProperty("language")]
         public object Language { get; set; }
 
-        [DataMember(Name = "name")]
+        [JsonProperty("name")]
         public string Name { get; set; }
 
-        [DataMember(Name = "subtype")]
+        [JsonProperty("subtype")]
         public string SubType { get; set; }
 
-        [DataMember(Name = "trackContentId")]
+        [JsonProperty("trackContentId")]
         public string TrackContentId { get; set; }
 
-        [DataMember(Name = "trackContentType")]
+        [JsonProperty("trackContentType")]
         public string TrackContentType { get; set; }
 
-        [DataMember(Name = "trackId")]
+        [JsonProperty("trackId")]
         public long TrackId { get; set; }
 
-        [DataMember(Name = "type")]
+        [JsonProperty("type")]
         public string Type { get; set; }
     }
 }

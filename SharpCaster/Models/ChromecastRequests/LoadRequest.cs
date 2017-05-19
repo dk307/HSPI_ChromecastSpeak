@@ -1,8 +1,8 @@
 ﻿using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace SharpCaster.Models.ChromecastRequests
 {
-    [DataContract]
     internal class LoadRequest : RequestWithId
     {
         public LoadRequest(int requestId, string sessionId, MediaData media, bool autoPlay, double currentTime,
@@ -17,22 +17,22 @@ namespace SharpCaster.Models.ChromecastRequests
             ActiveTrackIds = activeTrackIds;
         }
 
-        [DataMember(Name = "sessionId")]
+        [JsonProperty("sessionId")]
         public string SessionId { get; private set; }
 
-        [DataMember(Name = "media")]
+        [JsonProperty("media")]
         public MediaData Media { get; private set; }
 
-        [DataMember(Name = "autoplay")]
+        [JsonProperty("autoplay")]
         public bool AutoPlay { get; private set; }
 
-        [DataMember(Name = "currentTime")]
+        [JsonProperty("currentTime")]
         public double CurrentTime { get; private set; }
 
-        [DataMember(Name = "customData")]
+        [JsonProperty("customData")]
         public object Customdata { get; }
 
-        [DataMember(Name = "activeTrackIds")]
+        [JsonProperty("activeTrackIds")]
         public int[] ActiveTrackIds { get; set; }
     }
 }

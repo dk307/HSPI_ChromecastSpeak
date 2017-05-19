@@ -1,8 +1,7 @@
-﻿using System.Runtime.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace SharpCaster.Models.ChromecastRequests
 {
-    [DataContract]
     internal class ConnectRequest : Request
     {
         public ConnectRequest()
@@ -11,7 +10,7 @@ namespace SharpCaster.Models.ChromecastRequests
             UserAgent = "Homeseer Speak PlugIn";
         }
 
-        [DataMember(Name = "userAgent")]
+        [JsonProperty("userAgent")]
         public string UserAgent { get; set; }
     }
 }

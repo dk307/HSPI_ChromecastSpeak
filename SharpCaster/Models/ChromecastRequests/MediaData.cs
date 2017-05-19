@@ -1,10 +1,9 @@
-﻿using System.Runtime.Serialization;
-using SharpCaster.Models.MediaStatus;
+﻿using SharpCaster.Models.MediaStatus;
 using SharpCaster.Models.Metadata;
+using Newtonsoft.Json;
 
 namespace SharpCaster.Models.ChromecastRequests
 {
-    [DataContract]
     internal class MediaData
     {
         public MediaData(string url, string contentType, IMetadata metadata = null,
@@ -20,13 +19,13 @@ namespace SharpCaster.Models.ChromecastRequests
             Tracks = tracks;
         }
 
-        [DataMember(Name = "contentId")]
+        [JsonProperty("contentId")]
         public string Url { get; set; }
 
-        [DataMember(Name = "contentType")]
+        [JsonProperty("contentType")]
         public string ContentType { get; set; }
 
-        [DataMember(Name = "metadata")]
+        [JsonProperty("metadata")]
         public IMetadata Metadata { get; set; }
 
         ///-------------------------------------------------------------------------------------------------
@@ -38,16 +37,16 @@ namespace SharpCaster.Models.ChromecastRequests
         ///     The type of the stream.
         /// </value>
         ///-------------------------------------------------------------------------------------------------
-        [DataMember(Name = "streamType")]
+        [JsonProperty("streamType")]
         public string StreamType { get; set; }
 
-        [DataMember(Name = "duration")]
+        [JsonProperty("duration")]
         public double Duration { get; set; }
 
-        [DataMember(Name = "customData")]
+        [JsonProperty("customData")]
         public object CustomData { get; set; }
 
-        [DataMember(Name = "tracks")]
+        [JsonProperty("tracks")]
         public Track[] Tracks { get; set; }
     }
 }

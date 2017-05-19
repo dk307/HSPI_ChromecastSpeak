@@ -1,15 +1,13 @@
-using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace SharpCaster.Models.ChromecastRequests
 {
-    [DataContract]
-
     public class VolumeDataObject
     {
-        [DataMember(Name = "level")]
+        [JsonProperty("level")]
         public double? Level { get; set; }
 
-        [DataMember(Name = "muted")]
+        [JsonProperty("muted")]
         public bool? Muted { get; set; }
     }
 }

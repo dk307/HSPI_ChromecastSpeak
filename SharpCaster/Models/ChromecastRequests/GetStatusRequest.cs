@@ -1,8 +1,7 @@
-﻿using System.Runtime.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace SharpCaster.Models.ChromecastRequests
 {
-    [DataContract]
     internal class GetStatusRequest : RequestWithId
     {
         public GetStatusRequest(int requestId)
