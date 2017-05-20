@@ -45,6 +45,20 @@ namespace SharpCaster.Channels
             }
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                heartBeatTask?.Dispose();
+                abortCancellationSource.Dispose();
+                if (combinedCancellationSource != null)
+                {
+                    combinedCancellationSource.Dispose();
+                }
+            }
+            base.Dispose(disposing);
+        }
+
         private Task heartBeatTask;
         private readonly CancellationTokenSource abortCancellationSource = new CancellationTokenSource();
         private CancellationTokenSource combinedCancellationSource;

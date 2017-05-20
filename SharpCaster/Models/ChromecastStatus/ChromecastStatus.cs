@@ -5,16 +5,18 @@ namespace SharpCaster.Models.ChromecastStatus
 {
     internal class ChromecastStatus
     {
-        [JsonProperty("applications")]
-        public List<ChromecastApplication> Applications { get; set; }
+        [JsonConstructor]
+        public ChromecastStatus(IList<ChromecastApplication> applications, bool? isActiveInput, bool? isStandBy, Volume volume)
+        {
+            Volume = volume;
+            IsStandBy = isStandBy;
+            IsActiveInput = isActiveInput;
+            Applications = applications;
+        }
 
-        [JsonProperty("isActiveInput")]
-        public bool? IsActiveInput { get; set; }
-
-        [JsonProperty("isStandBy")]
-        public bool? IsStandBy { get; set; }
-
-        [JsonProperty("volume")]
-        public Volume Volume { get; set; }
+        public IList<ChromecastApplication> Applications { get; }
+        public bool? IsActiveInput { get; }
+        public bool? IsStandBy { get; }
+        public Volume Volume { get; }
     }
 }

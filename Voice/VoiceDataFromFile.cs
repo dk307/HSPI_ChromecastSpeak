@@ -37,8 +37,10 @@ namespace Hspi.Voice
         {
             try
             {
-                TagLib.File tagFile = TagLib.File.Create(new TagLib.StreamFileAbstraction(filePath, stream, stream));
-                return tagFile.Properties?.Duration;
+                using (TagLib.File tagFile = TagLib.File.Create(new TagLib.StreamFileAbstraction(filePath, stream, stream)))
+                {
+                    return tagFile.Properties?.Duration;
+                }
             }
             catch (Exception ex)
             {

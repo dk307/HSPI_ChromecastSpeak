@@ -1,7 +1,14 @@
-﻿namespace SharpCaster.Models.ChromecastStatus
+﻿using Newtonsoft.Json;
+
+namespace SharpCaster.Models.ChromecastStatus
 {
     internal class Namespace
     {
-        public string name { get; set; }
+        public Namespace(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
     }
 }

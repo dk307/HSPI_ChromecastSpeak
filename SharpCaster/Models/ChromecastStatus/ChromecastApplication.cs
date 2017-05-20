@@ -5,22 +5,23 @@ namespace SharpCaster.Models.ChromecastStatus
 {
     internal class ChromecastApplication
     {
-        [JsonProperty("appId")]
-        public string AppId { get; set; }
+        [JsonConstructor]
+        public ChromecastApplication(string appId, string displayName, IList<Namespace> namespaces,
+                                     string sessionId, string statusText, string transportId)
+        {
+            TransportId = transportId;
+            StatusText = statusText;
+            SessionId = sessionId;
+            Namespaces = namespaces;
+            DisplayName = displayName;
+            AppId = appId;
+        }
 
-        [JsonProperty("displayName")]
-        public string DisplayName { get; set; }
-
-        [JsonProperty("namespaces")]
-        public List<Namespace> Namespaces { get; set; }
-
-        [JsonProperty("sessionId")]
-        public string SessionId { get; set; }
-
-        [JsonProperty("statusText")]
-        public string StatusText { get; set; }
-
-        [JsonProperty("transportId")]
-        public string TransportId { get; set; }
+        public string AppId { get; }
+        public string DisplayName { get; }
+        public IList<Namespace> Namespaces { get; }
+        public string SessionId { get; }
+        public string StatusText { get; }
+        public string TransportId { get; }
     }
 }

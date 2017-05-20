@@ -175,6 +175,11 @@ namespace SharpCaster
             {
                 if (disposing)
                 {
+                    HeartbeatChannel.Dispose();
+                    ConnectionChannel.Dispose();
+                    MediaChannel.Dispose();
+                    ReceiverChannel.Dispose();
+
                     ChromecastSocketService?.Dispose();
                     clientConnectLock.Dispose();
                 }

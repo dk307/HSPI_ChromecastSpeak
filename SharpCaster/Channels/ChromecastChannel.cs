@@ -1,12 +1,13 @@
 ﻿using NullGuard;
 using SharpCaster.Models;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SharpCaster.Channels
 {
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal abstract class ChromecastChannel
+    internal abstract class ChromecastChannel : IDisposable
     {
         protected ChromeCastClient Client { get; }
         public string Namespace { get; }
@@ -30,5 +31,28 @@ namespace SharpCaster.Channels
         public abstract Task Abort();
 
         internal abstract void OnMessageReceived(CastMessage castMessage);
+
+        #region IDisposable Support
+
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        #endregion IDisposable Support
     }
 }

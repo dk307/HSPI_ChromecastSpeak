@@ -80,6 +80,16 @@ namespace SharpCaster.Channels
             }
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                completedListLock.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
+
         private bool aborted = false;
         private readonly SemaphoreSlim completedListLock = new SemaphoreSlim(1);
 

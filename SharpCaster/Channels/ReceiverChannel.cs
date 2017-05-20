@@ -25,9 +25,9 @@ namespace SharpCaster.Channels
             {
                 Client.ChromecastStatus = response.ChromecastStatus;
             }
-            if (response.requestId != 0)
+            if (response.RequestId != 0)
             {
-                if (TryRemoveRequestTracking(response.requestId, out var completed))
+                if (TryRemoveRequestTracking(response.RequestId, out var completed))
                 {
                     completed.SetResult(true);
                 }
