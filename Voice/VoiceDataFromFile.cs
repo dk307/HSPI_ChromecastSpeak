@@ -24,7 +24,7 @@ namespace Hspi.Voice
             using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, true))
             {
                 data = new byte[stream.Length];
-                await stream.ReadAsync(data, 0, (int)stream.Length);
+                await stream.ReadAsync(data, 0, (int)stream.Length, token).ConfigureAwait(false);
 
                 stream.Position = 0;
                 length = GetMediaLength(filePath, stream);
