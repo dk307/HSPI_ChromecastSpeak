@@ -9,9 +9,7 @@
         /// The homeseer server address.  Defaults to the local computer but can be changed through the command line argument, server=address.
         /// </summary>
         private static string serverAddress = "127.0.0.1";
-
         private const int serverPort = 10400;
-
         /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
@@ -29,7 +27,6 @@
                         break;
                 }
             }
-
             using (var plugin = new HSPI_ChromecastSpeak.HSPI())
             {
                 plugin.Connect(serverAddress, serverPort);

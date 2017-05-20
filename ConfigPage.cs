@@ -62,8 +62,9 @@ namespace Hspi
                         pluginConfig.Devices.TryGetValue(parts[DeviceIdId], out var device);
                         stb.Append(BuildAddNewWebPageBody(device)); break;
 
-                    default:
+                    case MainPageType:
                     case null:
+                    default:
                         stb.Append(BuildMainWebPageBody()); break;
                 }
                 stb.Append(PageBuilderAndMenu.clsPageBuilder.DivEnd());
@@ -114,7 +115,7 @@ namespace Hspi
 
                 if (results.Length > 0)
                 {
-                    this.divToUpdate.Add(SaveErrorDivId, results.ToString());
+                    divToUpdate.Add(SaveErrorDivId, results.ToString());
                 }
                 else
                 {
@@ -134,82 +135,105 @@ namespace Hspi
 
                     var device = new ChromecastDevice(deviceId, parts[NameId], ipAddress, volume == -1 ? null : (ushort?)volume);
 
-                    this.pluginConfig.AddDevice(device);
-                    this.pluginConfig.FireConfigChanged();
-                    this.divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
+                    pluginConfig.AddDevice(device);
+                    pluginConfig.FireConfigChanged();
+                    divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
                 }
             }
             else if (form == NameToIdWithPrefix(CancelDeviceName))
             {
-                this.divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
+                divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
             }
             else if (form == NameToIdWithPrefix(DeleteDeviceName))
             {
-                this.pluginConfig.RemoveDevice(parts[DeviceIdId]);
-                this.pluginConfig.FireConfigChanged();
-                this.divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
+                pluginConfig.RemoveDevice(parts[DeviceIdId]);
+                pluginConfig.FireConfigChanged();
+                divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
             }
-            else if (form == NameToIdWithPrefix(DebugLoggingId))
+            else if (form == NameToIdWithPrefix(SaveSettingName))
             {
-                this.pluginConfig.DebugLogging = parts[NameToId(DebugLoggingId)] == "checked";
-            }
-            else if (form == NameToIdWithPrefix(FormatSpeechId))
-            {
-                this.pluginConfig.ForwardSpeach = parts[NameToId(FormatSpeechId)] == "checked";
+                StringBuilder results = new StringBuilder();
+
+                // Validate
+                IPAddress ipAddress = null;
+                if (!string.IsNullOrWhiteSpace(parts[ServerIPAddressId]))
+                {
+                    if (!IPAddress.TryParse(parts[ServerIPAddressId], out ipAddress))
+                    {
+                        results.AppendLine("Server IP Address is not Valid.<br>");
+                    }
+                }
+
+                ushort port = 0;
+                if (string.IsNullOrWhiteSpace(parts[ServerPortId]) ||
+                   !ushort.TryParse(parts[ServerPortId], out port))
+                {
+                    results.AppendLine("Port is not Valid.<br>");
+                }
+
+                if (results.Length > 0)
+                {
+                    divToUpdate.Add(SaveErrorDivId, results.ToString());
+                }
+                else
+                {
+                    pluginConfig.WebServerPort = port;
+                    pluginConfig.WebServerIPAddress = ipAddress;
+                    pluginConfig.DebugLogging = parts[NameToId(DebugLoggingId)] == "checked";
+                    pluginConfig.ForwardSpeach = parts[NameToId(FormatSpeechId)] == "checked";
+                    pluginConfig.FireConfigChanged();
+                    divToUpdate.Add(SaveErrorDivId, string.Empty);
+                }
             }
 
             return base.postBackProc(Name, data, user, userRights);
         }
 
-        private const string EditDevicePageType = "addNew";
-
-        private string BuildMainWebPageBody()
+        protected static string HtmlTextBox(string name, string defaultText, int size = 25, string type = "text", bool @readonly = false)
         {
-            StringBuilder stb = new StringBuilder();
+            return Invariant($@"<input type='{type}' id='{NameToIdWithPrefix(name)}' size='{size}' name='{name}' value='{defaultText}' {(@readonly ? "readonly" : string.Empty)}>");
+        }
 
-            stb.Append(@"<div>");
-
-            // Setting
-            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmSettings", "Id", "Post"));
-            stb.Append(@"<table class='full_width_table'");
-            stb.Append("<tr height='2'><td width=25%></td><td></td></tr>");
-            stb.Append("<tr><td class='tableheader' colspan=2>Settings</td></tr>");
-            stb.Append(Invariant($"<tr><td colspan=1>Debug Logging Enabled:</td><td colspan=1>{FormCheckBox(DebugLoggingId, string.Empty, this.pluginConfig.DebugLogging, true)}</ td ></ tr > "));
-            stb.Append(Invariant($"<tr><td colspan=1>Foward Speech To HomeSeer:</td><td colspan=1>{FormCheckBox(FormatSpeechId, string.Empty, this.pluginConfig.ForwardSpeach, true)}</ td ></ tr > "));
-            stb.Append("<tr height='5'><td colspan=2></td></tr>");
-            stb.Append(@"</table");
-            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
-
-            //Device List
-            stb.Append(@"<table class='full_width_table'");
-            stb.Append("<tr height='5'><td colspan=4></td></tr>");
-            stb.Append("<tr><td class='tableheader' colspan=4>Devices</td></tr>");
-            stb.Append(@"<tr>" +
-                        "<td class='tablecolumn'>Name</td>" +
-                        "<td class='tablecolumn'>Device IP Address</td>" +
-                        "<td class='tablecolumn'>Volume</td>" +
-                        "<td class='tablecolumn'></td>" +
-                        "</tr>");
-
-            foreach (var device in pluginConfig.Devices)
+        protected string FormCheckBox(string name, string label, bool @checked, bool autoPostBack = false)
+        {
+            var cb = new clsJQuery.jqCheckBox(name, label, PageName, true, true)
             {
-                stb.Append(@"<tr>");
-                stb.Append(Invariant($"<td class='tablecell'>{device.Value.Name}</td>"));
-                stb.Append(Invariant($"<td class='tablecell'>{device.Value.DeviceIP}</td>"));
+                id = NameToIdWithPrefix(name),
+                @checked = @checked,
+                autoPostBack = autoPostBack,
+            };
+            return cb.Build();
+        }
 
-                string volumeString = device.Value.Volume != null ? device.Value.Volume.Value.ToString(CultureInfo.InvariantCulture) : "Don't Change";
-                stb.Append(Invariant($"<td class='tablecell'>{volumeString}</td>"));
-                stb.Append(Invariant($"<td class='tablecell'>{PageTypeButton(Invariant($"Edit{device.Key}"), "Edit", EditDevicePageType, deviceId: device.Key)}</ td ></ tr > "));
-            }
-            stb.Append(Invariant($"<tr><td colspan=4>{PageTypeButton("Add New Device", AddNewName, EditDevicePageType)}</td><td></td></tr>"));
-            stb.Append("<tr height='5'><td colspan=4></td></tr>");
-            stb.Append(Invariant($"<tr><td colspan=4></td></tr>"));
-            stb.Append(@"<tr height='5'><td colspan=4></td></tr>");
-            stb.Append(@" </table>");
+        protected string FormPageButton(string name, string label)
+        {
+            var b = new clsJQuery.jqButton(name, label, PageName, true)
+            {
+                id = NameToIdWithPrefix(name),
+            };
 
-            stb.Append(@"</div>");
+            return b.Build();
+        }
 
-            return stb.ToString();
+        protected string PageTypeButton(string name, string label, string pageType, string deviceId = null)
+        {
+            var b = new clsJQuery.jqButton(name, label, PageName, false)
+            {
+                id = NameToIdWithPrefix(name),
+                url = Invariant($@"/{HttpUtility.UrlEncode(ConfigPage.Name)}?{PageTypeId}={HttpUtility.UrlEncode(pageType)}&{DeviceIdId}={HttpUtility.UrlEncode(deviceId ?? string.Empty)}"),
+            };
+
+            return b.Build();
+        }
+
+        private static string NameToId(string name)
+        {
+            return name.Replace(' ', '_');
+        }
+
+        private static string NameToIdWithPrefix(string name)
+        {
+            return Invariant($"{IdPrefix}{NameToId(name)}");
         }
 
         private string BuildAddNewWebPageBody([AllowNull]ChromecastDevice device)
@@ -266,71 +290,94 @@ namespace Hspi
             return stb.ToString();
         }
 
-        private static string NameToId(string name)
+        private string BuildMainWebPageBody()
         {
-            return name.Replace(' ', '_');
-        }
+            StringBuilder stb = new StringBuilder();
 
-        private static string NameToIdWithPrefix(string name)
-        {
-            return Invariant($"{IdPrefix}{NameToId(name)}");
-        }
+            stb.Append(@"<div>");
 
-        protected static string HtmlTextBox(string name, string defaultText, int size = 25, string type = "text", bool @readonly = false)
-        {
-            return Invariant($"<input type=\'{type}\' id=\'{NameToIdWithPrefix(name)}\' size=\'{size}\' name=\'{name}\' value=\'{defaultText}\' {(@readonly ? "readonly" : string.Empty)}>");
-        }
+            // Setting
+            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmSettings", "Id", "Post"));
+            stb.Append(@"<table class='full_width_table'");
+            stb.Append("<tr height='2'><td width=25%></td><td></td></tr>");
+            stb.Append("<tr><td class='tableheader' colspan=2>Settings</td></tr>");
+            stb.Append(Invariant($@"<tr  class='tablecell'><td>Override Server IP Address:</td><td>{
+                                HtmlTextBox(ServerIPAddressId,
+                                            pluginConfig.WebServerIPAddress != null ? pluginConfig.WebServerIPAddress.ToString() : string.Empty)
+                                }</td ></tr>"));
+            stb.Append(Invariant($@"<tr class='tablecell'><td>Server Port:</td><td>{
+                                HtmlTextBox(ServerPortId, pluginConfig.WebServerPort.ToString(CultureInfo.InvariantCulture))
+                                }</td></tr>"));
+            stb.Append(Invariant($@"<tr class='tablecell'><td>Foward Speech To HomeSeer:</td><td>{
+                                FormCheckBox(FormatSpeechId, string.Empty, pluginConfig.ForwardSpeach, false)
+                                }</td></tr>"));
+            stb.Append(Invariant($@"<tr class='tablecell'><td>Debug Logging Enabled:</td><td>{
+                                  FormCheckBox(DebugLoggingId, string.Empty, pluginConfig.DebugLogging, false)
+                                  }</td></tr>"));
+            stb.Append(Invariant($"<tr class='tablecell'><td><div id='{SaveErrorDivId}' style='color:Red'></div></td><td></td></tr>"));
 
-        protected string FormCheckBox(string name, string label, bool @checked, bool autoPostBack = false)
-        {
-            var cb = new clsJQuery.jqCheckBox(name, label, PageName, true, true)
+            stb.Append(Invariant($@"<tr class='tablecell'><td>{FormPageButton(SaveSettingName, "Save")}</td><td></td></tr>"));
+
+            stb.Append(@"<tr height='5'><td colspan=2></td></tr>");
+            stb.Append(@"</table");
+            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
+
+            //Device List
+            stb.Append(@"<table class='full_width_table'");
+            stb.Append("<tr height='5'><td colspan=4></td></tr>");
+            stb.Append("<tr><td class='tableheader' colspan=4>Devices</td></tr>");
+            stb.Append(@"<tr>" +
+                        "<td class='tablecolumn'>Name</td>" +
+                        "<td class='tablecolumn'>Device IP Address</td>" +
+                        "<td class='tablecolumn'>Volume</td>" +
+                        "<td class='tablecolumn'></td>" +
+                        "</tr>");
+
+            foreach (var device in pluginConfig.Devices)
             {
-                id = NameToIdWithPrefix(name),
-                @checked = @checked,
-                autoPostBack = autoPostBack,
-            };
-            return cb.Build();
+                stb.Append(@"<tr>");
+                stb.Append(Invariant($"<td class='tablecell'>{device.Value.Name}</td>"));
+                stb.Append(Invariant($"<td class='tablecell'>{device.Value.DeviceIP}</td>"));
+
+                string volumeString = device.Value.Volume != null ?
+                                        device.Value.Volume.Value.ToString(CultureInfo.InvariantCulture) : "Don't Change";
+                stb.Append(Invariant($"<td class='tablecell'>{volumeString}</td>"));
+                stb.Append(Invariant($"<td class='tablecell'>{PageTypeButton(Invariant($"Edit{device.Key}"), "Edit", EditDevicePageType, deviceId: device.Key)}</ td ></ tr > "));
+            }
+            stb.Append(Invariant($"<tr><td colspan=4>{PageTypeButton("Add New Device", AddNewName, EditDevicePageType)}</td><td></td></tr>"));
+            stb.Append("<tr height='5'><td colspan=4></td></tr>");
+            stb.Append(Invariant($"<tr><td colspan=4></td></tr>"));
+            stb.Append(@"<tr height='5'><td colspan=4></td></tr>");
+            stb.Append(@" </table>");
+
+            stb.Append(@"</div>");
+
+            return stb.ToString();
         }
 
-        protected string PageTypeButton(string name, string label, string type, string deviceId = null)
-        {
-            var b = new clsJQuery.jqButton(name, label, PageName, false)
-            {
-                id = NameToIdWithPrefix(name),
-                url = Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}?{PageTypeId}={HttpUtility.UrlEncode(type)}&{DeviceIdId}={HttpUtility.UrlEncode(deviceId ?? string.Empty)}"),
-            };
-
-            return b.Build();
-        }
-
-        protected string FormPageButton(string name, string label)
-        {
-            var b = new clsJQuery.jqButton(name, label, PageName, true)
-            {
-                id = NameToIdWithPrefix(name),
-            };
-
-            return b.Build();
-        }
-
-        private const string SaveDeviceName = "SaveButton";
-        private const string DeviceIdId = "DeviceIdId";
-        private const string PageTypeId = "type";
         private const string AddNewName = "Add New";
-        private const string FormatSpeechId = "FormatSpeechId";
+        private const string CancelDeviceName = "CancelDeviceName";
         private const string DebugLoggingId = "DebugLoggingId";
+        private const string DeleteDeviceName = "DeleteDeviceName";
+        private const string DeviceIdId = "DeviceIdId";
         private const string DeviceIPId = "DeviceIPId";
-        private const string SaveErrorDivId = "message_id";
+        private const string EditDevicePageType = "addNew";
+        private const string FormatSpeechId = "FormatSpeechId";
+        private const string IdPrefix = "id_";
         private const string ImageDivId = "image_id";
-        private const string RefreshIntervalId = "RefreshIntervalId";
+        private const string MainPageType = "main";
+        private const string NameId = "NameId";
+        private const string PageTypeId = "type";
+        private const int PortsMax = 8;
+        private const string SaveDeviceName = "SaveDeviceButton";
+        private const string SaveErrorDivId = "message_id";
+        private const string ServerIPAddressId = "ServerIPAddressId";
+        private const string ServerPortId = "ServerPortId";
+        private const string VolumeId = "VolumeId";
+        private const string SaveSettingName = "SaveSettings";
+
         private static readonly string pageName = Invariant($"{PluginData.PlugInName} Configuration").Replace(' ', '_');
         private readonly IHSApplication HS;
         private readonly PluginConfig pluginConfig;
-        private const string DeleteDeviceName = "DeleteDeviceName";
-        private const string CancelDeviceName = "CancelDeviceName";
-        private const string VolumeId = "VolumeId";
-        private const string NameId = "NameId";
-        private const string IdPrefix = "id_";
-        private const int PortsMax = 8;
     }
 }

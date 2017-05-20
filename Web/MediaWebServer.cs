@@ -13,7 +13,7 @@ namespace Hspi.Web
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class MediaWebServer : IDisposable
     {
-        public MediaWebServer(string ipAddress, int port)
+        public MediaWebServer(string ipAddress, ushort port)
         {
             UrlPrefix = Invariant($"http://{ipAddress}:{port}/");
             server = new WebServer(UrlPrefix, RoutingStrategy.Wildcard);

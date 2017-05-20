@@ -1,16 +1,12 @@
 ﻿using HomeSeerAPI;
-using Hspi.Exceptions;
-using NullGuard;
-using Scheduler.Classes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.IO;
+using Hspi.Chromecast;
 using Hspi.Voice;
 using Hspi.Web;
-using Hspi.Chromecast;
+using NullGuard;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Hspi
 {

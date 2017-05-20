@@ -24,17 +24,21 @@ namespace Hspi
         /// Initializes a new instance of the <see cref="PluginConfig"/> class.
         /// </summary>
         /// <param name="HS">The homeseer application.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults", MessageId = "System.Net.IPAddress.TryParse(System.String,System.Net.IPAddress@)")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults",
+             MessageId = "System.Net.IPAddress.TryParse(System.String,System.Net.IPAddress@)")]
         public PluginConfig(IHSApplication HS)
         {
             this.HS = HS;
-
             debugLogging = GetValue(DebugLoggingKey, false);
             forwardSpeech = GetValue(ForwardSpeechKey, true);
-            webServerPort = GetValue(WebServerPortKey, 8081);
+
+            string webServerIPAddressString = GetValue(WebServerIPAddressKey, string.Empty);
+            IPAddress.TryParse(webServerIPAddressString, out webServerIPAddress);
+
+            webServerPort = GetValue<ushort>(WebServerPortKey, 8081);
+
             string deviceIdsConcatString = GetValue(DeviceIds, string.Empty);
             var deviceIds = deviceIdsConcatString.Split(DeviceIdsSeparator);
-
             foreach (var deviceId in deviceIds)
             {
                 if (string.IsNullOrWhiteSpace(deviceId))
@@ -43,12 +47,10 @@ namespace Hspi
                 }
                 string ipAddressString = GetValue(IPAddressKey, string.Empty, deviceId);
                 IPAddress.TryParse(ipAddressString, out var deviceIP);
-
                 string name = GetValue(NameKey, string.Empty, deviceId);
                 var volume = GetValue<short>(VolumeKey, -1, deviceId);
                 devices.Add(deviceId, new ChromecastDevice(deviceId, name, deviceIP, volume == -1 ? null : (ushort?)volume));
             }
-
             // Auto create entries in INI File
             WebServerPort = this.webServerPort;
         }
@@ -95,7 +97,6 @@ namespace Hspi
                     configLock.ExitReadLock();
                 }
             }
-
             set
             {
                 configLock.EnterWriteLock();
@@ -125,7 +126,6 @@ namespace Hspi
                     configLock.ExitReadLock();
                 }
             }
-
             set
             {
                 configLock.EnterWriteLock();
@@ -141,7 +141,7 @@ namespace Hspi
             }
         }
 
-        public int WebServerPort
+        public ushort WebServerPort
         {
             get
             {
@@ -155,7 +155,6 @@ namespace Hspi
                     configLock.ExitReadLock();
                 }
             }
-
             set
             {
                 configLock.EnterWriteLock();
@@ -163,6 +162,36 @@ namespace Hspi
                 {
                     SetValue(WebServerPortKey, value);
                     webServerPort = value;
+                }
+                finally
+                {
+                    configLock.ExitWriteLock();
+                }
+            }
+        }
+
+        public IPAddress WebServerIPAddress
+        {
+            get
+            {
+                configLock.EnterReadLock();
+                try
+                {
+                    return webServerIPAddress;
+                }
+                finally
+                {
+                    configLock.ExitReadLock();
+                }
+            }
+
+            set
+            {
+                configLock.EnterWriteLock();
+                try
+                {
+                    SetValue(WebServerIPAddressKey, value);
+                    webServerIPAddress = value;
                 }
                 finally
                 {
@@ -218,7 +247,6 @@ namespace Hspi
         private T GetValue<T>(string key, T defaultValue, string section)
         {
             string stringValue = HS.GetINISetting(section, key, null, FileName);
-
             if (stringValue != null)
             {
                 try
@@ -281,6 +309,7 @@ namespace Hspi
 
         private const string NameKey = "Name";
         private const string DeviceIds = "DevicesIds";
+        private const string WebServerIPAddressKey = "WebServerIPAddress";
         private const string DebugLoggingKey = "DebugLogging";
         private const string ForwardSpeechKey = "FowardSpeech";
         private const string WebServerPortKey = "WebServerPort";
@@ -290,13 +319,13 @@ namespace Hspi
         private const string DefaultSection = "Settings";
         private const char DeviceIdsSeparator = '|';
         private const char PortsEnabledSeparator = ',';
-
         private readonly Dictionary<string, ChromecastDevice> devices = new Dictionary<string, ChromecastDevice>();
         private readonly IHSApplication HS;
-        private int webServerPort;
+        private ushort webServerPort;
         private bool debugLogging;
         private bool forwardSpeech;
         private bool disposedValue = false;
         private readonly ReaderWriterLockSlim configLock = new ReaderWriterLockSlim();
+        private IPAddress webServerIPAddress;
     };
 }

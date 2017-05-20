@@ -17,7 +17,7 @@ namespace Hspi.Web
             ShutdownCancellationToken = shutdownCancellationToken;
         }
 
-        public async Task StartupServer(string address, int port)
+        public async Task StartupServer(string address, ushort port)
         {
             await webServerLock.WaitAsync(ShutdownCancellationToken).ConfigureAwait(false);
             try
@@ -34,7 +34,8 @@ namespace Hspi.Web
                 webServer?.Dispose();
 
                 webServerTokenSource = new CancellationTokenSource();
-                combinedWebServerTokenSource = CancellationTokenSource.CreateLinkedTokenSource(webServerTokenSource.Token, ShutdownCancellationToken);
+                combinedWebServerTokenSource =
+                    CancellationTokenSource.CreateLinkedTokenSource(webServerTokenSource.Token, ShutdownCancellationToken);
 
                 webServer = new MediaWebServer(address, port);
                 logger.LogInfo(Invariant($"Starting Web Server on {address}:{port}"));
