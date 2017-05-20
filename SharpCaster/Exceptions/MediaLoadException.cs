@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace SharpCaster.Exceptions
 {
     [Serializable]
-    public class MediaLoadException : ChromecastDeviceException
+    internal class MediaLoadException : ChromecastDeviceException
     {
         public string FailureType { get; }
 

@@ -1,8 +1,17 @@
-﻿namespace SharpCaster.Models
+﻿using Newtonsoft.Json;
+
+namespace SharpCaster.Models
 {
     internal class Volume
     {
-        public float level { get; set; }
-        public bool muted { get; set; }
+        [JsonConstructor]
+        public Volume(float level, bool muted)
+        {
+            Muted = muted;
+            Level = level;
+        }
+
+        public float Level { get; }
+        public bool Muted { get; }
     }
 }

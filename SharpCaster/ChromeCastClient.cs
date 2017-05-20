@@ -36,6 +36,7 @@ namespace SharpCaster
 
         public ChromecastStatus ChromecastStatus { get; set; }
         public MediaStatus MediaStatus { get; set; }
+
         public ConnectionChannel ConnectionChannel { get; }
         public MediaChannel MediaChannel { get; }
         public HeartbeatChannel HeartbeatChannel { get; }
@@ -76,6 +77,7 @@ namespace SharpCaster
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public async Task Disconnect(CancellationToken token)
         {
             await DisconnectCore(true, token).ConfigureAwait(false);
@@ -169,6 +171,10 @@ namespace SharpCaster
 
         private bool disposedValue = false; // To detect redundant calls
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<ReceiverChannel>k__BackingField")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<MediaChannel>k__BackingField")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<HeartbeatChannel>k__BackingField")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<ConnectionChannel>k__BackingField")]
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)

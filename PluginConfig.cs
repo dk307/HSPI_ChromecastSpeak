@@ -24,6 +24,7 @@ namespace Hspi
         /// Initializes a new instance of the <see cref="PluginConfig"/> class.
         /// </summary>
         /// <param name="HS">The homeseer application.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults", MessageId = "System.Net.IPAddress.TryParse(System.String,System.Net.IPAddress@)")]
         public PluginConfig(IHSApplication HS)
         {
             this.HS = HS;

@@ -59,7 +59,7 @@ namespace Hspi.Chromecast
                     // Restore the existing volume
                     if (volume.HasValue && (currentVolume != null))
                     {
-                        await client.ReceiverChannel.SetVolume(currentVolume.level, currentVolume.muted, cancellationToken)
+                        await client.ReceiverChannel.SetVolume(currentVolume.Level, currentVolume.Muted, cancellationToken)
                                                     .ConfigureAwait(false);
                     }
 
