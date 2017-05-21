@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace Hspi
 {
@@ -12,11 +13,17 @@ namespace Hspi
         {
             try
             {
-                await task.ConfigureAwait(false);
+                await task;
             }
             catch (OperationCanceledException)
             {
             }
+        }
+
+        public static async Task WaitOnRequestCompletion(this Task task, CancellationToken token)
+        {
+            await Task.WhenAny(task, Task.Delay(-1, token));
+            token.ThrowIfCancellationRequested();
         }
     }
 }

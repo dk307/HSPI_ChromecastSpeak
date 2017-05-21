@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Hspi;
+using Newtonsoft.Json;
 using NullGuard;
 using SharpCaster.Models;
 using SharpCaster.Models.ChromecastRequests;
@@ -38,17 +39,17 @@ namespace SharpCaster.Channels
         {
             int requestId = RequestIdProvider.Next;
             var message = MessageFactory.Launch(applicationId, requestId);
-            var requestCompletedSource = await AddRequestTracking(requestId, token);
-            await Write(message, token);
-            await WaitOnRequestCompletion(requestCompletedSource.Task, token);
+            var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
+            await Write(message, token).ConfigureAwait(false);
+            await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
         }
 
         public async Task GetChromecastStatus(CancellationToken token)
         {
             int requestId = RequestIdProvider.Next;
-            var requestCompletedSource = await AddRequestTracking(requestId, token);
-            await Write(MessageFactory.Status(requestId), token);
-            await WaitOnRequestCompletion(requestCompletedSource.Task, token);
+            var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
+            await Write(MessageFactory.Status(requestId), token).ConfigureAwait(false);
+            await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
         }
 
         public async Task SetVolume(double? level, bool? muted, CancellationToken token)
@@ -59,9 +60,9 @@ namespace SharpCaster.Channels
             }
 
             int requestId = RequestIdProvider.Next;
-            var requestCompletedSource = await AddRequestTracking(requestId, token);
-            await Write(MessageFactory.Volume(level, muted, requestId), token);
-            await WaitOnRequestCompletion(requestCompletedSource.Task, token);
+            var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
+            await Write(MessageFactory.Volume(level, muted, requestId), token).ConfigureAwait(false);
+            await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
         }
     }
 }

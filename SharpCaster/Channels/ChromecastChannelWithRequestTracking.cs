@@ -35,12 +35,6 @@ namespace SharpCaster.Channels
             }
         }
 
-        protected static async Task WaitOnRequestCompletion(Task requestCompletedTask, CancellationToken token)
-        {
-            await Task.WhenAny(requestCompletedTask, Task.Delay(-1, token));
-            token.ThrowIfCancellationRequested();
-        }
-
         protected async Task<TaskCompletionSource<bool>> AddRequestTracking(int requestId, CancellationToken token)
         {
             await completedListLock.WaitAsync(token).ConfigureAwait(false);

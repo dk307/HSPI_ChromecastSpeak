@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Hspi.Exceptions;
 using NullGuard;
-using System.Threading;
-using Hspi.Exceptions;
 using SharpCaster;
 using SharpCaster.Exceptions;
-using System.Diagnostics;
-using SharpCaster.Channels;
 using SharpCaster.Models.ChromecastStatus;
 using SharpCaster.Models.Metadata;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Hspi.Chromecast
 {
@@ -155,7 +152,7 @@ namespace Hspi.Chromecast
             connectedSource = new TaskCompletionSource<bool>(cancellationToken);
             client.ConnectedChanged += Client_ConnectedChanged;
             await client.ConnectChromecast(cancellationToken).ConfigureAwait(false);
-            await WaitOnRequestCompletion(connectedSource.Task, cancellationToken).ConfigureAwait(false);
+            await connectedSource.Task.WaitOnRequestCompletion(cancellationToken).ConfigureAwait(false);
             client.ConnectedChanged -= Client_ConnectedChanged;
 
             Trace.WriteLine(Invariant($"Connected to Chromecast {device.Name} on {device.DeviceIP}"));
@@ -169,14 +166,7 @@ namespace Hspi.Chromecast
             }
         }
 
-        protected static async Task WaitOnRequestCompletion(Task requestCompletedTask, CancellationToken token)
-        {
-            await Task.WhenAny(requestCompletedTask, Task.Delay(-1, token));
-            token.ThrowIfCancellationRequested();
-        }
-
         private const string defaultAppId = "CC1AD845";
-
         private readonly ILogger logger;
         private readonly ChromecastDevice device;
         private TaskCompletionSource<bool> connectedSource;

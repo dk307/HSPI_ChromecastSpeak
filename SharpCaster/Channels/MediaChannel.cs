@@ -12,6 +12,7 @@ using SharpCaster.Exceptions;
 
 namespace SharpCaster.Channels
 {
+    using Hspi;
     using static System.FormattableString;
 
     internal class MediaChannel : ChromecastChannelWithRequestTracking
@@ -51,15 +52,15 @@ namespace SharpCaster.Channels
         {
             int requestId = RequestIdProvider.Next;
 
-            var requestCompletedSource = await AddRequestTracking(requestId, token);
-            await Write(MessageFactory.MediaStatus(transportId, requestId), token);
-            await WaitOnRequestCompletion(requestCompletedSource.Task, token);
+            var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
+            await Write(MessageFactory.MediaStatus(transportId, requestId), token).ConfigureAwait(false);
+            await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
         }
 
         public async Task LoadMedia(
             ChromecastApplication application,
             Uri mediaUrl,
-            string contentType /*= "application/vnd.ms-sstr+xml"*/,
+            string contentType,
             CancellationToken token,
             IMetadata metadata = null,
             string streamType = "BUFFERED",
@@ -78,7 +79,7 @@ namespace SharpCaster.Channels
             var reqJson = req.ToJson();
             var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
             await Write(MessageFactory.Load(application.TransportId, reqJson), token).ConfigureAwait(false);
-            await WaitOnRequestCompletion(requestCompletedSource.Task, token).ConfigureAwait(false);
+            await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
             await requestCompletedSource.Task;
         }
     }
