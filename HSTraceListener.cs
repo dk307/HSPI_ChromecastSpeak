@@ -1,24 +1,33 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 
 namespace Hspi
 {
-    public class HSTraceListener : TraceListener
+    internal class HSTraceListener : TraceListener
     {
         public HSTraceListener(ILogger logger)
         {
-            this.logger = logger;
+            loggerWeakReference = new WeakReference<ILogger>(logger);
         }
 
         public override void Write(string message)
         {
-            logger.DebugLog(message);
+            Log(message);
         }
 
         public override void WriteLine(string message)
         {
-            logger.DebugLog(message);
+            Log(message);
         }
 
-        private readonly ILogger logger;
+        private void Log(string message)
+        {
+            if (!loggerWeakReference.TryGetTarget(out var logger))
+            {
+                logger.DebugLog(message);
+            }
+        }
+
+        private readonly WeakReference<ILogger> loggerWeakReference;
     }
 }

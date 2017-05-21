@@ -35,8 +35,6 @@ namespace SharpCaster
 
         public event EventHandler<bool> ConnectedChanged;
 
-        public ChromecastStatus ChromecastStatus { get; set; }
-
         public bool Connected
         {
             get { return connected; }
@@ -52,8 +50,9 @@ namespace SharpCaster
         public Uri DeviceUri { get; }
         public HeartbeatChannel HeartbeatChannel { get; }
         public MediaChannel MediaChannel { get; }
-        public MediaStatus MediaStatus { get; set; }
+
         public ReceiverChannel ReceiverChannel { get; }
+
         internal ChromecastSocketService ChromecastSocketService { get; set; }
 
         public async Task Abort(CancellationToken token = default(CancellationToken))

@@ -121,7 +121,6 @@ namespace SharpCaster.Services
                 {
                     combinedStopTokenSource?.Dispose();
                     stopTokenSource?.Dispose();
-                    readTask?.Dispose();
                     client?.Dispose();
                     clientWriteLock.Dispose();
                     clientConnectLock.Dispose();

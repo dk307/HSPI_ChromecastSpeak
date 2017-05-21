@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace SharpCaster.Channels
 {
-    internal abstract class ChromecastChannelWithRequestTracking : ChromecastChannel
+    internal abstract class ChromecastChannelWithRequestTracking<T> : ChromecastChannel
     {
         protected ChromecastChannelWithRequestTracking(ChromeCastClient client, string ns) :
             base(client, ns)
@@ -35,10 +35,10 @@ namespace SharpCaster.Channels
             }
         }
 
-        protected async Task<TaskCompletionSource<bool>> AddRequestTracking(int requestId, CancellationToken token)
+        protected async Task<TaskCompletionSource<T>> AddRequestTracking(int requestId, CancellationToken token)
         {
             await completedListLock.WaitAsync(token).ConfigureAwait(false);
-            TaskCompletionSource<bool> requestTracking = new TaskCompletionSource<bool>();
+            TaskCompletionSource<T> requestTracking = new TaskCompletionSource<T>();
             try
             {
                 if (aborted)
@@ -55,7 +55,7 @@ namespace SharpCaster.Channels
             }
         }
 
-        protected bool TryRemoveRequestTracking(int requestId, out TaskCompletionSource<bool> completionSource)
+        protected bool TryRemoveRequestTracking(int requestId, out TaskCompletionSource<T> completionSource)
         {
             completionSource = null;
             completedListLock.Wait();
@@ -87,7 +87,7 @@ namespace SharpCaster.Channels
         private bool aborted = false;
         private readonly SemaphoreSlim completedListLock = new SemaphoreSlim(1);
 
-        private readonly IDictionary<int, TaskCompletionSource<bool>> completedList =
-                        new Dictionary<int, TaskCompletionSource<bool>>();
+        private readonly IDictionary<int, TaskCompletionSource<T>> completedList =
+                        new Dictionary<int, TaskCompletionSource<T>>();
     }
 }

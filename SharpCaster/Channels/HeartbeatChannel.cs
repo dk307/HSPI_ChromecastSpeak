@@ -37,7 +37,7 @@ namespace SharpCaster.Channels
 
         private async Task HeartBeat(CancellationToken combinedToken)
         {
-            TimeSpan pingTimeSpan = TimeSpan.FromSeconds(5);
+            TimeSpan pingTimeSpan = TimeSpan.FromSeconds(4);
             while (!combinedToken.IsCancellationRequested)
             {
                 await Write(MessageFactory.Ping, combinedToken).ConfigureAwait(false);
@@ -49,7 +49,6 @@ namespace SharpCaster.Channels
         {
             if (disposing)
             {
-                heartBeatTask?.Dispose();
                 abortCancellationSource.Dispose();
                 if (combinedCancellationSource != null)
                 {

@@ -20,10 +20,18 @@ namespace Hspi
             }
         }
 
-        public static async Task WaitOnRequestCompletion(this Task task, CancellationToken token)
+        public static async Task<TResult> WaitOnRequestCompletion<TResult>(this Task<TResult> task, CancellationToken token)
         {
-            await Task.WhenAny(task, Task.Delay(-1, token));
-            token.ThrowIfCancellationRequested();
+            Task finishedTask = await Task.WhenAny(task, Task.Delay(-1, token));
+
+            if (finishedTask == task)
+            {
+                return task.Result;
+            }
+            else
+            {
+                throw new TaskCanceledException();
+            }
         }
     }
 }

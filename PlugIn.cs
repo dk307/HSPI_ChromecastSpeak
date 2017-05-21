@@ -160,7 +160,7 @@ namespace Hspi
 
         private async Task Speak(string text, IEnumerable<ChromecastDevice> devices)
         {
-            bool isFileName = IsReferingToTextFile(text);
+            bool isFileName = IsReferingToFile(text);
 
             VoiceData voiceData;
             if (isFileName)
@@ -175,28 +175,27 @@ namespace Hspi
 
             var uri = await webServerManager.Add(voiceData.Data, voiceData.Extension, voiceData.Duration).ConfigureAwait(false);
 
+            var stopTokenSource = new CancellationTokenSource();
+            var combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, ShutdownCancellationToken);
+
+            TimeSpan timeout = MediaWebServerManager.FileEntryExpiry;
+            if (voiceData.Duration.HasValue)
+            {
+                timeout.Add(voiceData.Duration.Value);
+            }
+
+            stopTokenSource.CancelAfter(timeout);
             List<Task> playTasks = new List<Task>();
             foreach (var device in devices)
             {
-                var stopTokenSource = new CancellationTokenSource();
-                var combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, ShutdownCancellationToken);
-
-                // Set a timeout for 60 seconds for speak to finish to detect hangs
-                TimeSpan timeout = MediaWebServerManager.FileEntryExpiry;
-                if (voiceData.Duration.HasValue)
-                {
-                    timeout.Add(voiceData.Duration.Value);
-                }
-
-                stopTokenSource.CancelAfter(timeout);
-                SimpleChromecast chromecast = new SimpleChromecast(this, device);
-                playTasks.Add(chromecast.Play(uri, voiceData.Duration, device.Volume, combinedStopTokenSource.Token));
+                SimpleChromecast chromecast = new SimpleChromecast(this, device, uri, voiceData.Duration, device.Volume);
+                playTasks.Add(chromecast.Play(combinedStopTokenSource.Token));
             }
 
             await Task.WhenAll(playTasks.ToArray()).ConfigureAwait(false);
         }
 
-        private bool IsReferingToTextFile(string text)
+        private bool IsReferingToFile(string text)
         {
             switch (HS.GetOSType())
             {

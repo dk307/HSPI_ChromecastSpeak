@@ -1,22 +1,22 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using Hspi;
 using Newtonsoft.Json;
 using SharpCaster.Models;
-using SharpCaster.Models.Metadata;
 using SharpCaster.Models.ChromecastRequests;
-using SharpCaster.Models.MediaStatus;
-using System.Threading;
-using System;
 using SharpCaster.Models.ChromecastStatus;
-using SharpCaster.Exceptions;
+using SharpCaster.Models.MediaStatus;
+using SharpCaster.Models.Metadata;
+using System;
+
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpCaster.Channels
 {
-    using Hspi;
-    using static System.FormattableString;
-
-    internal class MediaChannel : ChromecastChannelWithRequestTracking
+    internal class MediaChannel : ChromecastChannelWithRequestTracking<MediaStatus>
     {
+        public event EventHandler<MediaStatus> MessageReceived;
+
         public MediaChannel(ChromeCastClient client)
             : base(client, "urn:x-cast:com.google.cast.media")
         {
@@ -27,37 +27,29 @@ namespace SharpCaster.Channels
             var json = castMessage.PayloadUtf8;
             var response = JsonConvert.DeserializeObject<MediaStatusResponse>(json);
 
-            if ((response.status != null) && (response.status.Count > 0))
-            {
-                Client.MediaStatus = response.status.FirstOrDefault();
-            }
-
             if (response.requestId != 0)
             {
                 if (TryRemoveRequestTracking(response.requestId, out var completed))
                 {
-                    if (response.status == null)
-                    {
-                        completed.SetException(new MediaLoadException(Client.DeviceUri.ToString(), response.type));
-                    }
-                    else
-                    {
-                        completed.SetResult(true);
-                    }
+                    completed.SetResult(response.status?.FirstOrDefault());
                 }
+            }
+            else
+            {
+                MessageReceived?.Invoke(this, response.status?.FirstOrDefault());
             }
         }
 
-        public async Task GetMediaStatus(string transportId, CancellationToken token)
+        public async Task<MediaStatus> GetMediaStatus(string transportId, CancellationToken token)
         {
             int requestId = RequestIdProvider.Next;
 
             var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
             await Write(MessageFactory.MediaStatus(transportId, requestId), token).ConfigureAwait(false);
-            await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
+            return await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
         }
 
-        public async Task LoadMedia(
+        public async Task<MediaStatus> LoadMedia(
             ChromecastApplication application,
             Uri mediaUrl,
             string contentType,
@@ -79,8 +71,7 @@ namespace SharpCaster.Channels
             var reqJson = req.ToJson();
             var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
             await Write(MessageFactory.Load(application.TransportId, reqJson), token).ConfigureAwait(false);
-            await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
-            await requestCompletedSource.Task;
+            return await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
         }
     }
 }
