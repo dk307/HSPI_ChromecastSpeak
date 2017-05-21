@@ -299,6 +299,52 @@ namespace Hspi
             stb.Append(@"<div>");
 
             // Setting
+            stb.Append(CreateSettingTable());
+
+            //Device List
+            stb.Append(CreateDeviceListTable());
+
+            return stb.ToString();
+        }
+
+        private string CreateDeviceListTable()
+        {
+            StringBuilder stb = new StringBuilder();
+            stb.Append(@"<table class='full_width_table'");
+            stb.Append("<tr height='5'><td colspan=4></td></tr>");
+            stb.Append("<tr><td class='tableheader' colspan=4>Devices</td></tr>");
+            stb.Append(@"<tr>" +
+                        "<td class='tablecolumn'>Name</td>" +
+                        "<td class='tablecolumn'>Device IP Address</td>" +
+                        "<td class='tablecolumn'>Volume</td>" +
+                        "<td class='tablecolumn'></td>" +
+                        "</tr>");
+
+            foreach (var device in pluginConfig.Devices)
+            {
+                stb.Append(@"<tr>");
+                stb.Append(Invariant($"<td class='tablecell'>{device.Value.Name}</td>"));
+                stb.Append(Invariant($"<td class='tablecell'>{device.Value.DeviceIP}</td>"));
+
+                string volumeString = device.Value.Volume != null ?
+                                        device.Value.Volume.Value.ToString(CultureInfo.InvariantCulture) : "Don't Change";
+                stb.Append(Invariant($"<td class='tablecell'>{volumeString}</td>"));
+                stb.Append(Invariant($"<td class='tablecell'>{PageTypeButton(Invariant($"Edit{device.Key}"), "Edit", EditDevicePageType, deviceId: device.Key)}</ td ></ tr > "));
+            }
+            stb.Append(Invariant($"<tr><td colspan=4>{PageTypeButton("Add New Device", AddNewName, EditDevicePageType)}</td><td></td></tr>"));
+            stb.Append("<tr height='5'><td colspan=4></td></tr>");
+            stb.Append(Invariant($"<tr><td colspan=4></td></tr>"));
+            stb.Append(@"<tr height='5'><td colspan=4></td></tr>");
+            stb.Append(@" </table>");
+
+            stb.Append(@"</div>");
+            return stb.ToString();
+        }
+
+        private string CreateSettingTable()
+        {
+            StringBuilder stb = new StringBuilder();
+
             stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmSettings", "Id", "Post"));
             stb.Append(@"<table class='full_width_table'");
             stb.Append("<tr height='2'><td width=25%></td><td></td></tr>");
@@ -345,37 +391,6 @@ namespace Hspi
             stb.Append(@"<tr height='5'><td colspan=2></td></tr>");
             stb.Append(@"</table");
             stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
-
-            //Device List
-            stb.Append(@"<table class='full_width_table'");
-            stb.Append("<tr height='5'><td colspan=4></td></tr>");
-            stb.Append("<tr><td class='tableheader' colspan=4>Devices</td></tr>");
-            stb.Append(@"<tr>" +
-                        "<td class='tablecolumn'>Name</td>" +
-                        "<td class='tablecolumn'>Device IP Address</td>" +
-                        "<td class='tablecolumn'>Volume</td>" +
-                        "<td class='tablecolumn'></td>" +
-                        "</tr>");
-
-            foreach (var device in pluginConfig.Devices)
-            {
-                stb.Append(@"<tr>");
-                stb.Append(Invariant($"<td class='tablecell'>{device.Value.Name}</td>"));
-                stb.Append(Invariant($"<td class='tablecell'>{device.Value.DeviceIP}</td>"));
-
-                string volumeString = device.Value.Volume != null ?
-                                        device.Value.Volume.Value.ToString(CultureInfo.InvariantCulture) : "Don't Change";
-                stb.Append(Invariant($"<td class='tablecell'>{volumeString}</td>"));
-                stb.Append(Invariant($"<td class='tablecell'>{PageTypeButton(Invariant($"Edit{device.Key}"), "Edit", EditDevicePageType, deviceId: device.Key)}</ td ></ tr > "));
-            }
-            stb.Append(Invariant($"<tr><td colspan=4>{PageTypeButton("Add New Device", AddNewName, EditDevicePageType)}</td><td></td></tr>"));
-            stb.Append("<tr height='5'><td colspan=4></td></tr>");
-            stb.Append(Invariant($"<tr><td colspan=4></td></tr>"));
-            stb.Append(@"<tr height='5'><td colspan=4></td></tr>");
-            stb.Append(@" </table>");
-
-            stb.Append(@"</div>");
-
             return stb.ToString();
         }
 
