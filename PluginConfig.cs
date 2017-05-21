@@ -31,6 +31,7 @@ namespace Hspi
             this.HS = HS;
             debugLogging = GetValue(DebugLoggingKey, false);
             forwardSpeech = GetValue(ForwardSpeechKey, true);
+            sapiVoice = GetValue<string>(SapiVoiceKey, null);
 
             string webServerIPAddressString = GetValue(WebServerIPAddressKey, string.Empty);
             IPAddress.TryParse(webServerIPAddressString, out webServerIPAddress);
@@ -133,6 +134,35 @@ namespace Hspi
                 {
                     SetValue(ForwardSpeechKey, value);
                     forwardSpeech = value;
+                }
+                finally
+                {
+                    configLock.ExitWriteLock();
+                }
+            }
+        }
+
+        public string SAPIVoice
+        {
+            get
+            {
+                configLock.EnterReadLock();
+                try
+                {
+                    return sapiVoice;
+                }
+                finally
+                {
+                    configLock.ExitReadLock();
+                }
+            }
+            set
+            {
+                configLock.EnterWriteLock();
+                try
+                {
+                    SetValue(SapiVoiceKey, value);
+                    sapiVoice = value;
                 }
                 finally
                 {
@@ -313,6 +343,7 @@ namespace Hspi
         private const string DebugLoggingKey = "DebugLogging";
         private const string ForwardSpeechKey = "FowardSpeech";
         private const string WebServerPortKey = "WebServerPort";
+        private const string SapiVoiceKey = "SAPIVoice";
         private readonly static string FileName = Invariant($"{Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly().Location)}.ini");
         private const string IPAddressKey = "IPAddress";
         private const string VolumeKey = "Volume";
@@ -324,6 +355,7 @@ namespace Hspi
         private ushort webServerPort;
         private bool debugLogging;
         private bool forwardSpeech;
+        private string sapiVoice;
         private bool disposedValue = false;
         private readonly ReaderWriterLockSlim configLock = new ReaderWriterLockSlim();
         private IPAddress webServerIPAddress;

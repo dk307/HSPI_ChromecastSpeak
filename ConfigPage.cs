@@ -11,6 +11,7 @@ using System.Web;
 
 namespace Hspi
 {
+    using System.Speech.Synthesis;
     using static System.FormattableString;
 
     /// <summary>
@@ -181,6 +182,7 @@ namespace Hspi
                     pluginConfig.WebServerIPAddress = ipAddress;
                     pluginConfig.DebugLogging = parts[NameToId(DebugLoggingId)] == "checked";
                     pluginConfig.ForwardSpeach = parts[NameToId(FormatSpeechId)] == "checked";
+                    pluginConfig.SAPIVoice = parts[SapiVoiceId];
                     pluginConfig.FireConfigChanged();
                     divToUpdate.Add(SaveErrorDivId, string.Empty);
                 }
@@ -311,6 +313,28 @@ namespace Hspi
             stb.Append(Invariant($@"<tr class='tablecell'><td>Foward Speech To HomeSeer:</td><td>{
                                 FormCheckBox(FormatSpeechId, string.Empty, pluginConfig.ForwardSpeach, false)
                                 }</td></tr>"));
+
+            stb.Append("<tr class='tablecell'><td>SAPI Voice:</td><td>");
+            string sapiVoice = pluginConfig.SAPIVoice;
+            var volumeDropDown = new clsJQuery.jqDropList(NameToId(SapiVoiceId), PageName, false)
+            {
+                toolTip = "Select SAPI Voice",
+                autoPostBack = false,
+            };
+            volumeDropDown.AddItem("Don't Set", "-1", string.IsNullOrWhiteSpace(sapiVoice));
+
+            using (var speechSynthesizer = new SpeechSynthesizer())
+            {
+                foreach (var value in speechSynthesizer.GetInstalledVoices())
+                {
+                    var stringValue = value.VoiceInfo.Name;
+                    volumeDropDown.AddItem(stringValue, stringValue, sapiVoice == stringValue);
+                }
+            }
+            stb.Append(volumeDropDown.Build());
+
+            stb.Append("</td></tr>");
+
             stb.Append(Invariant($@"<tr class='tablecell'><td>Debug Logging Enabled:</td><td>{
                                   FormCheckBox(DebugLoggingId, string.Empty, pluginConfig.DebugLogging, false)
                                   }</td></tr>"));
@@ -373,6 +397,7 @@ namespace Hspi
         private const string SaveErrorDivId = "message_id";
         private const string ServerIPAddressId = "ServerIPAddressId";
         private const string ServerPortId = "ServerPortId";
+        private const string SapiVoiceId = "SapiVoiceId";
         private const string VolumeId = "VolumeId";
         private const string SaveSettingName = "SaveSettings";
 
