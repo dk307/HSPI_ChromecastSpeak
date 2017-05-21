@@ -38,7 +38,7 @@ namespace Hspi
 #endif
                 pluginConfig.ConfigChanged += PluginConfig_ConfigChanged;
 
-                Task.Factory.StartNew(() => webServerManager.StartupServer(HS.GetIPAddress(), pluginConfig.WebServerPort));
+                Task.Factory.StartNew(() => StartWebServer());
 
                 RegisterConfigPage();
 
@@ -55,8 +55,23 @@ namespace Hspi
             return result;
         }
 
+        private async Task StartWebServer()
+        {
+            try
+            {
+                var address = pluginConfig.CalculateServerIPAddress();
+                var port = pluginConfig.WebServerPort;
+                await webServerManager.StartupServer(address, port);
+            }
+            catch (Exception ex)
+            {
+                LogError(Invariant($"Failed to start Web Server with Error:{ExceptionHelper.GetFullMessage(ex)}"));
+            }
+        }
+
         private void PluginConfig_ConfigChanged(object sender, EventArgs e)
         {
+            Task.Factory.StartNew(() => StartWebServer());
         }
 
         public override void DebugLog(string message)
@@ -154,7 +169,7 @@ namespace Hspi
             }
             else
             {
-                var voiceGenerator = new VoiceGenerator(this, text);
+                var voiceGenerator = new VoiceGenerator(this, text, pluginConfig.SAPIVoice);
                 voiceData = await voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken).ConfigureAwait(false);
             }
 

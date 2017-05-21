@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using NullGuard;
 using Hspi.Exceptions;
+using System.Diagnostics;
+using System.Net;
 
 namespace Hspi.Web
 {
@@ -14,44 +16,15 @@ namespace Hspi.Web
         public MediaWebServerManager(ILogger logger, CancellationToken shutdownCancellationToken)
         {
             this.logger = logger;
-            ShutdownCancellationToken = shutdownCancellationToken;
+            this.shutdownCancellationToken = shutdownCancellationToken;
         }
 
-        public async Task StartupServer(string address, ushort port)
-        {
-            await webServerLock.WaitAsync(ShutdownCancellationToken).ConfigureAwait(false);
-            try
-            {
-                if (webServer != null)
-                {
-                    logger.DebugLog("Stopping old webserver if running.");
-                }
-                // Stop any existing server
-                webServerTokenSource?.Cancel();
-                webServerTask?.Wait(ShutdownCancellationToken);
-                webServerTokenSource?.Dispose();
-                combinedWebServerTokenSource?.Dispose();
-                webServer?.Dispose();
-
-                webServerTokenSource = new CancellationTokenSource();
-                combinedWebServerTokenSource =
-                    CancellationTokenSource.CreateLinkedTokenSource(webServerTokenSource.Token, ShutdownCancellationToken);
-
-                webServer = new MediaWebServer(address, port);
-                logger.LogInfo(Invariant($"Starting Web Server on {address}:{port}"));
-
-                webServerTask = webServer.StartListening(combinedWebServerTokenSource.Token);
-            }
-            finally
-            {
-                webServerLock.Release();
-            }
-        }
+        public static TimeSpan FileEntryExpiry => TimeSpan.FromSeconds(120);
 
         public async Task<Uri> Add(byte[] buffer, string extension, TimeSpan? duration)
         {
             // This lock allows us to wait till server has started
-            await webServerLock.WaitAsync(ShutdownCancellationToken);
+            await webServerLock.WaitAsync(shutdownCancellationToken);
             try
             {
                 if ((webServer == null) || (!webServer.IsListening))
@@ -79,20 +52,34 @@ namespace Hspi.Web
             }
         }
 
-        public static TimeSpan FileEntryExpiry => TimeSpan.FromSeconds(120);
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            Dispose(true);
+        }
 
-        private CancellationToken ShutdownCancellationToken { get; }
-        private readonly SemaphoreSlim webServerLock = new SemaphoreSlim(1);
-        private MediaWebServer webServer;
-        private Task webServerTask;
-        private CancellationTokenSource webServerTokenSource;
-        private CancellationTokenSource combinedWebServerTokenSource;
-        private int pathNumber = 0;
-        private readonly ILogger logger;
+        public async Task StartupServer(IPAddress address, ushort port)
+        {
+            await webServerLock.WaitAsync(shutdownCancellationToken).ConfigureAwait(false);
+            try
+            {
+                await StopOldServer().ConfigureAwait(false);
 
-        #region IDisposable Support
+                webServerTokenSource = new CancellationTokenSource();
+                combinedWebServerTokenSource =
+                    CancellationTokenSource.CreateLinkedTokenSource(webServerTokenSource.Token, shutdownCancellationToken);
 
-        private bool disposedValue = false; // To detect redundant calls
+                webServer = new MediaWebServer(address, port);
+                logger.LogInfo(Invariant($"Starting Web Server on {address}:{port}"));
+
+                webServerTask = webServer.StartListening(combinedWebServerTokenSource.Token)
+                                         .ContinueWith((x) => WebServerFinished(x), combinedWebServerTokenSource.Token);
+            }
+            finally
+            {
+                webServerLock.Release();
+            }
+        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -110,12 +97,54 @@ namespace Hspi.Web
             }
         }
 
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose()
+        private async Task StopOldServer()
         {
-            Dispose(true);
+            try
+            {
+                if (webServer != null)
+                {
+                    logger.DebugLog("Stopping old webserver if running.");
+                }
+                // Stop any existing server
+                webServerTokenSource?.Cancel();
+                if (webServerTask != null)
+                {
+                    try
+                    {
+                        await webServerTask.WaitForFinishNoCancelException();
+                    }
+                    catch { }
+                }
+                webServerTokenSource?.Dispose();
+                combinedWebServerTokenSource?.Dispose();
+                webServer?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(Invariant($"Exception in stopping old Server {ExceptionHelper.GetFullMessage(ex)}"));
+            }
         }
 
-        #endregion IDisposable Support
+        private void WebServerFinished(Task task)
+        {
+            if (task.IsFaulted)
+            {
+                logger.LogWarning(Invariant($"WebServer Stopped with error {ExceptionHelper.GetFullMessage(task.Exception)}"));
+            }
+            else
+            {
+                Trace.WriteLine("Web Server Stopped.");
+            }
+        }
+
+        private readonly ILogger logger;
+        private readonly SemaphoreSlim webServerLock = new SemaphoreSlim(1);
+        private CancellationTokenSource combinedWebServerTokenSource;
+        private bool disposedValue = false;
+        private int pathNumber = 0;
+        private CancellationToken shutdownCancellationToken;
+        private MediaWebServer webServer;
+        private Task webServerTask;
+        private CancellationTokenSource webServerTokenSource;
     }
 }

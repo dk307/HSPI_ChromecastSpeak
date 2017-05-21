@@ -178,11 +178,15 @@ namespace Hspi
                 }
                 else
                 {
+                    string sapiVoice = parts[SapiVoiceId];
+
+                    sapiVoice = (sapiVoice == null) || (sapiVoice == NoValueForVoice) ? null : sapiVoice;
+
                     pluginConfig.WebServerPort = port;
                     pluginConfig.WebServerIPAddress = ipAddress;
                     pluginConfig.DebugLogging = parts[NameToId(DebugLoggingId)] == "checked";
                     pluginConfig.ForwardSpeach = parts[NameToId(FormatSpeechId)] == "checked";
-                    pluginConfig.SAPIVoice = parts[SapiVoiceId];
+                    pluginConfig.SAPIVoice = sapiVoice;
                     pluginConfig.FireConfigChanged();
                     divToUpdate.Add(SaveErrorDivId, string.Empty);
                 }
@@ -238,6 +242,7 @@ namespace Hspi
             return Invariant($"{IdPrefix}{NameToId(name)}");
         }
 
+
         private string BuildAddNewWebPageBody([AllowNull]ChromecastDevice device)
         {
             string name = device != null ? device.Name.ToString() : string.Empty;
@@ -264,7 +269,7 @@ namespace Hspi
                 toolTip = "Select Volume of device when Spoken",
                 autoPostBack = false,
             };
-            volumeDropDown.AddItem("Don't Change", "-1", volume == -1);
+            volumeDropDown.AddItem("Don't Change", NoValueForVoice, volume == -1);
 
             foreach (var value in Enumerable.Range(1, 100))
             {
@@ -367,7 +372,7 @@ namespace Hspi
                 toolTip = "Select SAPI Voice",
                 autoPostBack = false,
             };
-            volumeDropDown.AddItem("Don't Set", "-1", string.IsNullOrWhiteSpace(sapiVoice));
+            volumeDropDown.AddItem("Don't Set", NoValueForVoice, string.IsNullOrWhiteSpace(sapiVoice));
 
             using (var speechSynthesizer = new SpeechSynthesizer())
             {
@@ -415,6 +420,8 @@ namespace Hspi
         private const string SapiVoiceId = "SapiVoiceId";
         private const string VolumeId = "VolumeId";
         private const string SaveSettingName = "SaveSettings";
+        private const string NoValueForVoice = "-1";
+
 
         private static readonly string pageName = Invariant($"{PluginData.PlugInName} Configuration").Replace(' ', '_');
         private readonly IHSApplication HS;

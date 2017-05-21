@@ -1,53 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using NullGuard;
 using SharpCaster.Channels;
 using SharpCaster.Extensions;
 using SharpCaster.Models;
 using SharpCaster.Models.ChromecastStatus;
-using SharpCaster.Services;
-using System.Threading;
-
 using SharpCaster.Models.MediaStatus;
-using NullGuard;
+using SharpCaster.Services;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpCaster
 {
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class ChromeCastClient : IDisposable
     {
-        public bool Connected
-        {
-            get { return _connected; }
-            set
-            {
-                var oldConnected = _connected;
-                _connected = value;
-                if (_connected != oldConnected) ConnectedChanged?.Invoke(this, value);
-            }
-        }
-
-        private bool _connected;
-
-        internal ChromecastSocketService ChromecastSocketService { get; set; }
-
-        public ChromecastStatus ChromecastStatus { get; set; }
-        public MediaStatus MediaStatus { get; set; }
-
-        public ConnectionChannel ConnectionChannel { get; }
-        public MediaChannel MediaChannel { get; }
-        public HeartbeatChannel HeartbeatChannel { get; }
-        public ReceiverChannel ReceiverChannel { get; }
-        public Uri DeviceUri { get; }
-
-        public event EventHandler<bool> ConnectedChanged;
-
-        private const int ChromecastPort = 8009;
-        private IList<ChromecastChannel> Channels;
-
         public ChromeCastClient(Uri uri)
         {
             DeviceUri = uri;
@@ -61,6 +31,34 @@ namespace SharpCaster
             Channels.Add(ReceiverChannel);
             MediaChannel = new MediaChannel(this);
             Channels.Add(MediaChannel);
+        }
+
+        public event EventHandler<bool> ConnectedChanged;
+
+        public ChromecastStatus ChromecastStatus { get; set; }
+
+        public bool Connected
+        {
+            get { return connected; }
+            set
+            {
+                var oldConnected = connected;
+                connected = value;
+                if (connected != oldConnected) ConnectedChanged?.Invoke(this, value);
+            }
+        }
+
+        public ConnectionChannel ConnectionChannel { get; }
+        public Uri DeviceUri { get; }
+        public HeartbeatChannel HeartbeatChannel { get; }
+        public MediaChannel MediaChannel { get; }
+        public MediaStatus MediaStatus { get; set; }
+        public ReceiverChannel ReceiverChannel { get; }
+        internal ChromecastSocketService ChromecastSocketService { get; set; }
+
+        public async Task Abort(CancellationToken token = default(CancellationToken))
+        {
+            await DisconnectCore(false, token).ConfigureAwait(false);
         }
 
         public async Task ConnectChromecast(CancellationToken token)
@@ -83,9 +81,34 @@ namespace SharpCaster
             await DisconnectCore(true, token).ConfigureAwait(false);
         }
 
-        public async Task Abort(CancellationToken token = default(CancellationToken))
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
         {
-            await DisconnectCore(false, token).ConfigureAwait(false);
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<ReceiverChannel>k__BackingField")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<MediaChannel>k__BackingField")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<HeartbeatChannel>k__BackingField")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<ConnectionChannel>k__BackingField")]
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    HeartbeatChannel.Dispose();
+                    ConnectionChannel.Dispose();
+                    MediaChannel.Dispose();
+                    ReceiverChannel.Dispose();
+
+                    ChromecastSocketService?.Dispose();
+                    clientConnectLock.Dispose();
+                }
+
+                disposedValue = true;
+            }
         }
 
         private async Task DisconnectCore(bool sendClose, CancellationToken token)
@@ -165,42 +188,10 @@ namespace SharpCaster
             }
         }
 
+        private const int ChromecastPort = 8009;
         private readonly SemaphoreSlim clientConnectLock = new SemaphoreSlim(1);
-
-        #region IDisposable Support
-
+        private IList<ChromecastChannel> Channels;
+        private bool connected;
         private bool disposedValue = false; // To detect redundant calls
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<ReceiverChannel>k__BackingField")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<MediaChannel>k__BackingField")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<HeartbeatChannel>k__BackingField")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<ConnectionChannel>k__BackingField")]
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    HeartbeatChannel.Dispose();
-                    ConnectionChannel.Dispose();
-                    MediaChannel.Dispose();
-                    ReceiverChannel.Dispose();
-
-                    ChromecastSocketService?.Dispose();
-                    clientConnectLock.Dispose();
-                }
-
-                disposedValue = true;
-            }
-        }
-
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        #endregion IDisposable Support
     }
 }

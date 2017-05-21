@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using Unosquare.Swan.Networking;
+using Unosquare.Swan;
 
 namespace Hspi
 {
@@ -267,6 +269,32 @@ namespace Hspi
             {
                 configLock.ExitWriteLock();
             }
+        }
+
+        public IPAddress CalculateServerIPAddress()
+        {
+            // if there is override address, use it
+            var overrideIPAddress = WebServerIPAddress;
+            if ((overrideIPAddress != null) && (overrideIPAddress.Equals(IPAddress.Any)))
+            {
+                return overrideIPAddress;
+            }
+
+            var ipAddresses = Network.GetIPv4Addresses(false);
+
+            var hsAddress = IPAddress.Parse(HS.GetIPAddress());
+
+            // if nothing is specified and hs address is in local addresses, us it
+            if (ipAddresses.Contains(hsAddress))
+            {
+                return hsAddress;
+            }
+
+            if (ipAddresses.Length == 0)
+            {
+                throw new Exception("No Local IP4 Address Found");
+            }
+            return ipAddresses.First();
         }
 
         private T GetValue<T>(string key, T defaultValue)
