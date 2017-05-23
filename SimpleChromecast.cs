@@ -89,7 +89,7 @@ namespace Hspi.Chromecast
             }
         }
 
-        private void MediaChannel_MessageReceived(object sender, MediaStatus mediaStatus)
+        private void MediaChannel_MessageReceived(object sender, [AllowNull]MediaStatus mediaStatus)
         {
             if (loadedMediaStatus != null)
             {

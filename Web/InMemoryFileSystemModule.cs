@@ -9,9 +9,11 @@ using System.Threading.Tasks;
 using Unosquare.Labs.EmbedIO;
 using System.Runtime.Caching;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Hspi.Web
 {
+    using System.Text;
     using static System.FormattableString;
 
     /// <summary>
@@ -48,7 +50,7 @@ namespace Hspi.Web
         /// <value>
         /// The ram cache.
         /// </value>
-        private ObjectCache RamCache { get; }
+        private MemoryCache RamCache { get; }
 
         /// <summary>
         /// Represents a RAM Cache dictionary entry
@@ -99,6 +101,10 @@ namespace Hspi.Web
             Trace.WriteLine($"Request Type {context.RequestVerb()} from {context.Request.RemoteEndPoint} for {context.Request.Url}");
 
             var requestedPath = GetUrlPath(context);
+            if (string.IsNullOrEmpty(requestedPath))
+            {
+                return await SendFileList(context);
+            }
 
             var eTagValid = false;
             var partialHeader = context.RequestHeader(Constants.HeaderRange);
@@ -111,7 +117,7 @@ namespace Hspi.Web
 
             if (cacheItem == null || cacheItem.Value == null)
             {
-                context.Response.StatusCode = (int)System.Net.HttpStatusCode.NotFound;
+                context.Response.StatusCode = (int)HttpStatusCode.NotFound;
                 Trace.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
                 return true;
             }
@@ -191,6 +197,42 @@ namespace Hspi.Web
             }
 
             Trace.WriteLine($"Finished Serving to {context.Request.RemoteEndPoint} for {context.Request.Url} bytes {byteLength} at offset {lowerByteIndex}");
+            return true;
+        }
+
+        private async Task<bool> SendFileList(HttpListenerContext context)
+        {
+            StringBuilder stb = new StringBuilder();
+
+            stb.AppendLine("<!DOCTYPE html><html><head>" +
+                            "<style>");
+            stb.AppendLine("table{ border-collapse: collapse;  width: 100 %; }");
+            stb.AppendLine("th, td{text-align: left;padding: 8px;}");
+            stb.AppendLine("tr:nth-child(even){background-color: #f2f2f2}");
+            stb.AppendLine("th{background-color: #808080;color: white}");
+            stb.AppendLine("</style >" +
+                           "</head ><body>");
+            stb.AppendLine(@"<table>");
+            stb.AppendLine(@"<tr><th>File</th><th>Size</th><th>Last Modified</th></tr>");
+
+            foreach (var file in RamCache.OrderBy((key) => ((RamCacheEntry)key.Value).LastModified))
+            {
+                RamCacheEntry entry = (RamCacheEntry)file.Value;
+                stb.AppendLine(Invariant($"<tr><td><a href=\"{file.Key}\">{file.Key}</a></td>"));
+                stb.AppendLine(Invariant($"<td>{entry.Buffer.Length} bytes</td></td><td>{entry.LastModified}</td></tr>"));
+            }
+            stb.AppendLine(@"</table>");
+            stb.AppendLine(@"</body></html>");
+
+            context.Response.ContentType = "text/html";
+            context.Response.StatusCode = (int)HttpStatusCode.OK;
+
+            byte[] data = Encoding.UTF8.GetBytes(stb.ToString());
+            context.Response.ContentLength64 = data.LongLength;
+            await context.Response.OutputStream.WriteAsync(data, 0, data.Length);
+
+            context.Response.ContentEncoding = Encoding.UTF8;
+
             return true;
         }
 
