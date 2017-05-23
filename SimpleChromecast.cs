@@ -46,12 +46,18 @@ namespace Hspi.Chromecast
                 {
                     var status = await LaunchApplication(client, cancellationToken).ConfigureAwait(false);
 
+                    bool resetVolumeBack = false;
                     var currentVolume = status?.Volume;
                     if (volume.HasValue)
                     {
-                        Trace.WriteLine(Invariant($"Setting Volume on Chromecast {device.Name} to {volume.Value}"));
-                        status = await client.ReceiverChannel.SetVolume(volume / 100, false, cancellationToken).ConfigureAwait(false);
-                        Trace.WriteLine(Invariant($"Finished Setting Volume on Chromecast {device.Name} to {volume.Value}"));
+                        double chromecastVolume = volume.Value / 100;
+                        if (currentVolume != null && ((currentVolume.Level != chromecastVolume) || currentVolume.Muted))
+                        {
+                            Trace.WriteLine(Invariant($"Setting Volume on Chromecast {device.Name} to {volume.Value}"));
+                            status = await client.ReceiverChannel.SetVolume(chromecastVolume, false, cancellationToken).ConfigureAwait(false);
+                            Trace.WriteLine(Invariant($"Finished Setting Volume on Chromecast {device.Name} to {volume.Value}"));
+                            resetVolumeBack = true;
+                        }
                     }
 
                     var defaultApplication = GetDefaultApplication(status);
@@ -70,7 +76,7 @@ namespace Hspi.Chromecast
                     client.MediaChannel.MessageReceived -= MediaChannel_MessageReceived;
 
                     // Restore the existing volume
-                    if (volume.HasValue && (currentVolume != null))
+                    if (resetVolumeBack)
                     {
                         Trace.WriteLine(Invariant($"Restoring Volume on Chromecast {device.Name}"));
                         await client.ReceiverChannel.SetVolume(currentVolume.Level, currentVolume.Muted, cancellationToken)
