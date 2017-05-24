@@ -9,8 +9,15 @@ param (
 
     [Parameter(Position=2, Mandatory=$true)]
     [int]$port
-
 )
+
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal( [Security.Principal.WindowsIdentity]::GetCurrent() )
+
+if ( -not $currentPrincipal.IsInRole( [Security.Principal.WindowsBuiltInRole]::Administrator ))
+{
+     write-host "Error Script only works as administrator".
+    // return
+}
 
 $builder = New-Object System.UriBuilder
 $builder.Host = $ipAddress
