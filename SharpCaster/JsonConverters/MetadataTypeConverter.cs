@@ -1,9 +1,8 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SharpCaster.Models.Enums;
 using SharpCaster.Models.Metadata;
-using System.Globalization;
+using System;
 
 namespace SharpCaster.JsonConverters
 {

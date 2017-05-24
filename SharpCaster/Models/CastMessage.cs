@@ -1,7 +1,7 @@
-﻿using System.IO;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using ProtoBuf;
 using SharpCaster.Extensions;
+using System.IO;
 
 namespace SharpCaster.Models
 {

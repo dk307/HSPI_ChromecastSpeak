@@ -1,9 +1,9 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using NullGuard;
 using ProtoBuf;
 using SharpCaster.Models;
-using NullGuard;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace SharpCaster.Extensions
 {

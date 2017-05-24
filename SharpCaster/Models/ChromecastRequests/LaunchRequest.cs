@@ -2,7 +2,7 @@
 
 namespace SharpCaster.Models.ChromecastRequests
 {
-     internal class LaunchRequest : RequestWithId
+    internal class LaunchRequest : RequestWithId
     {
         public LaunchRequest(string appId, int requestId)
             : base("LAUNCH", requestId)

@@ -1,5 +1,5 @@
-﻿using System;
-using SharpCaster.Models.ChromecastRequests;
+﻿using SharpCaster.Models.ChromecastRequests;
+using System;
 
 namespace SharpCaster.Models
 {

@@ -1,6 +1,4 @@
-﻿using System.Runtime.Serialization;
-
-namespace SharpCaster.Models.ChromecastRequests
+﻿namespace SharpCaster.Models.ChromecastRequests
 {
     public class MediaStatusRequest : RequestWithId
     {

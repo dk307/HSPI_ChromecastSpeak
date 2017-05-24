@@ -2,8 +2,6 @@
 using SharpCaster.Channels;
 using SharpCaster.Extensions;
 using SharpCaster.Models;
-using SharpCaster.Models.ChromecastStatus;
-using SharpCaster.Models.MediaStatus;
 using SharpCaster.Services;
 using System;
 using System.Collections.Generic;

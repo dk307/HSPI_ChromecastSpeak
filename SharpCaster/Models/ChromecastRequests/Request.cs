@@ -1,8 +1,8 @@
- using Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace SharpCaster.Models.ChromecastRequests
 {
-     public abstract class Request
+    public abstract class Request
     {
         protected Request(string requestType)
         {
@@ -14,7 +14,7 @@ namespace SharpCaster.Models.ChromecastRequests
 
         public string ToJson()
         {
-            var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+            var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             return JsonConvert.SerializeObject(this, settings);
         }
     }

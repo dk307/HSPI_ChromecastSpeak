@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace Hspi
+﻿namespace Hspi
 {
     /// <summary>
     /// Class to store static data for PlugIn

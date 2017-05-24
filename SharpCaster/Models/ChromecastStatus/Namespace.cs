@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace SharpCaster.Models.ChromecastStatus
+﻿namespace SharpCaster.Models.ChromecastStatus
 {
     internal class Namespace
     {

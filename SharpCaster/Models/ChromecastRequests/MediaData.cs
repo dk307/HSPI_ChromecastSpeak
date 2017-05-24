@@ -1,6 +1,6 @@
-﻿using SharpCaster.Models.MediaStatus;
+﻿using Newtonsoft.Json;
+using SharpCaster.Models.MediaStatus;
 using SharpCaster.Models.Metadata;
-using Newtonsoft.Json;
 
 namespace SharpCaster.Models.ChromecastRequests
 {

@@ -242,7 +242,6 @@ namespace Hspi
             return Invariant($"{IdPrefix}{NameToId(name)}");
         }
 
-
         private string BuildAddNewWebPageBody([AllowNull]ChromecastDevice device)
         {
             string name = device != null ? device.Name.ToString() : string.Empty;
@@ -421,7 +420,6 @@ namespace Hspi
         private const string VolumeId = "VolumeId";
         private const string SaveSettingName = "SaveSettings";
         private const string NoValueForVoice = "-1";
-
 
         private static readonly string pageName = Invariant($"{PluginData.PlugInName} Configuration").Replace(' ', '_');
         private readonly IHSApplication HS;

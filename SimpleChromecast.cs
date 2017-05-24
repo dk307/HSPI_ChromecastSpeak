@@ -1,8 +1,8 @@
-﻿using Hspi.Exceptions;
-using NullGuard;
+﻿using NullGuard;
 using SharpCaster;
 using SharpCaster.Exceptions;
 using SharpCaster.Models.ChromecastStatus;
+using SharpCaster.Models.MediaStatus;
 using SharpCaster.Models.Metadata;
 using System;
 using System.Diagnostics;
@@ -12,11 +12,10 @@ using System.Threading.Tasks;
 
 namespace Hspi.Chromecast
 {
-    using SharpCaster.Models.MediaStatus;
     using static System.FormattableString;
 
     /// <summary>
-    /// Not Thread Safe
+    /// Class to play  Url on Chromecast Device
     /// </summary>
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class SimpleChromecast
@@ -35,7 +34,7 @@ namespace Hspi.Chromecast
             Trace.WriteLine(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
             if (!Uri.TryCreate(Invariant($"https://{device.DeviceIP}/"), UriKind.Absolute, out Uri deviceUri))
             {
-                throw new HspiException(Invariant($"Failed to create Uri for Chromecast {device.Name} on {device.DeviceIP}"));
+                throw new ChromecastException(Invariant($"Failed to create Uri for Chromecast {device.Name} on {device.DeviceIP}"));
             }
 
             using (var client = new ChromeCastClient(deviceUri))
@@ -64,7 +63,7 @@ namespace Hspi.Chromecast
 
                     client.MediaChannel.MessageReceived += MediaChannel_MessageReceived;
 
-                    loadedMediaStatus = await LoadMedia(client, defaultApplication, cancellationToken);
+                    loadedMediaStatus = await LoadMedia(client, defaultApplication, cancellationToken).ConfigureAwait(false);
 
                     if (loadedMediaStatus == null)
                     {
@@ -149,7 +148,7 @@ namespace Hspi.Chromecast
             var defaultApplication = GetDefaultApplication(status);
             if (defaultApplication == null)
             {
-                status = await client.ReceiverChannel.LaunchApplication(defaultAppId, cancellationToken);
+                status = await client.ReceiverChannel.LaunchApplication(defaultAppId, cancellationToken).ConfigureAwait(false);
                 defaultApplication = GetDefaultApplication(status);
             }
             else
@@ -162,7 +161,8 @@ namespace Hspi.Chromecast
                 throw new ChromecastDeviceException(device.Name, "No default app found inspite of launching it");
             }
 
-            await client.ConnectionChannel.ConnectWithDestination(defaultApplication.TransportId, cancellationToken);
+            await client.ConnectionChannel.ConnectWithDestination(defaultApplication.TransportId, cancellationToken)
+                                          .ConfigureAwait(false);
 
             Trace.WriteLine(Invariant($"Launched default app on Chromecast {device.Name}"));
             return status;

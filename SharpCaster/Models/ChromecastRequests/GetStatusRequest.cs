@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace SharpCaster.Models.ChromecastRequests
+﻿namespace SharpCaster.Models.ChromecastRequests
 {
     internal class GetStatusRequest : RequestWithId
     {

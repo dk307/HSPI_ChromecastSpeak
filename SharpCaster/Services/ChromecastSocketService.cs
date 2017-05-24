@@ -1,12 +1,10 @@
-﻿using System;
+﻿using Hspi;
+using NullGuard;
+using SharpCaster.Channels;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using SharpCaster.Channels;
-using System.Net.Sockets;
-using NullGuard;
-using Hspi;
-using System.Diagnostics;
 
 namespace SharpCaster.Services
 {
