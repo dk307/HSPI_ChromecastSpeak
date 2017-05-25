@@ -22,7 +22,7 @@ namespace Hspi
 
         private void Log(string message)
         {
-            if (!loggerWeakReference.TryGetTarget(out var logger))
+            if (loggerWeakReference.TryGetTarget(out var logger))
             {
                 logger.DebugLog(message);
             }
