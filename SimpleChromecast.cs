@@ -31,7 +31,6 @@ namespace Hspi.Chromecast
 
         public async Task Play(CancellationToken cancellationToken)
         {
-            Trace.WriteLine(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
             if (!Uri.TryCreate(Invariant($"https://{device.DeviceIP}/"), UriKind.Absolute, out Uri deviceUri))
             {
                 throw new ChromecastException(Invariant($"Failed to create Uri for Chromecast {device.Name} on {device.DeviceIP}"));
@@ -41,56 +40,50 @@ namespace Hspi.Chromecast
             {
                 await Connect(client, cancellationToken).ConfigureAwait(false);
 
-                try
+                var status = await LaunchApplication(client, cancellationToken).ConfigureAwait(false);
+
+                bool resetVolumeBack = false;
+                var currentVolume = status?.Volume;
+                if (volume.HasValue)
                 {
-                    var status = await LaunchApplication(client, cancellationToken).ConfigureAwait(false);
-
-                    bool resetVolumeBack = false;
-                    var currentVolume = status?.Volume;
-                    if (volume.HasValue)
+                    double chromecastVolume = volume.Value / 100;
+                    if (currentVolume != null && ((currentVolume.Level != chromecastVolume) || currentVolume.Muted))
                     {
-                        double chromecastVolume = volume.Value / 100;
-                        if (currentVolume != null && ((currentVolume.Level != chromecastVolume) || currentVolume.Muted))
-                        {
-                            Trace.WriteLine(Invariant($"Setting Volume on Chromecast {device.Name} to {volume.Value}"));
-                            status = await client.ReceiverChannel.SetVolume(chromecastVolume, false, cancellationToken).ConfigureAwait(false);
-                            Trace.WriteLine(Invariant($"Finished Setting Volume on Chromecast {device.Name} to {volume.Value}"));
-                            resetVolumeBack = true;
-                        }
+                        Trace.WriteLine(Invariant($"Setting Volume on Chromecast {device.Name} to {volume.Value}"));
+                        status = await client.ReceiverChannel.SetVolume(chromecastVolume, false, cancellationToken).ConfigureAwait(false);
+                        Trace.WriteLine(Invariant($"Finished Setting Volume on Chromecast {device.Name} to {volume.Value}"));
+                        resetVolumeBack = true;
                     }
-
-                    var defaultApplication = GetDefaultApplication(status);
-
-                    client.MediaChannel.MessageReceived += MediaChannel_MessageReceived;
-
-                    loadedMediaStatus = await LoadMedia(client, defaultApplication, cancellationToken).ConfigureAwait(false);
-
-                    if (loadedMediaStatus == null)
-                    {
-                        throw new MediaLoadException(device.DeviceIP.ToString(), "Failed to load");
-                    }
-
-                    await playbackFinished.Task.WaitOnRequestCompletion(cancellationToken).ConfigureAwait(false);
-
-                    client.MediaChannel.MessageReceived -= MediaChannel_MessageReceived;
-
-                    // Restore the existing volume
-                    if (resetVolumeBack)
-                    {
-                        Trace.WriteLine(Invariant($"Restoring Volume on Chromecast {device.Name}"));
-                        await client.ReceiverChannel.SetVolume(currentVolume.Level, currentVolume.Muted, cancellationToken)
-                                                    .ConfigureAwait(false);
-                        Trace.WriteLine(Invariant($"Finished Restoring Volume on Chromecast {device.Name}"));
-                    }
-
-                    this.logger.LogInfo(Invariant($"Played Speech on Chromecast {device.Name}"));
                 }
-                finally
+
+                var defaultApplication = GetDefaultApplication(status);
+
+                client.MediaChannel.MessageReceived += MediaChannel_MessageReceived;
+
+                loadedMediaStatus = await LoadMedia(client, defaultApplication, cancellationToken).ConfigureAwait(false);
+
+                if (loadedMediaStatus == null)
                 {
-                    Trace.WriteLine(Invariant($"Disconnecting Chromecast {device.Name}"));
-                    await client.Abort(cancellationToken).ConfigureAwait(false);
-                    Trace.WriteLine(Invariant($"Disconnected Chromecast {device.Name}"));
+                    throw new MediaLoadException(device.DeviceIP.ToString(), "Failed to load");
                 }
+
+                await playbackFinished.Task.WaitOnRequestCompletion(cancellationToken).ConfigureAwait(false);
+
+                client.MediaChannel.MessageReceived -= MediaChannel_MessageReceived;
+
+                // Restore the existing volume
+                if (resetVolumeBack)
+                {
+                    Trace.WriteLine(Invariant($"Restoring Volume on Chromecast {device.Name}"));
+                    await client.ReceiverChannel.SetVolume(currentVolume.Level, currentVolume.Muted, cancellationToken)
+                                                .ConfigureAwait(false);
+                    Trace.WriteLine(Invariant($"Finished Restoring Volume on Chromecast {device.Name}"));
+                }
+
+                this.logger.LogInfo(Invariant($"Played Speech on Chromecast {device.Name}"));
+                Trace.WriteLine(Invariant($"Disconnecting Chromecast {device.Name}"));
+                await client.Disconnect(cancellationToken).ConfigureAwait(false);
+                Trace.WriteLine(Invariant($"Disconnected Chromecast {device.Name}"));
             }
         }
 
@@ -124,7 +117,7 @@ namespace Hspi.Chromecast
         private async Task<MediaStatus> LoadMedia(ChromeCastClient client, ChromecastApplication defaultApplication,
                                                   CancellationToken cancellationToken)
         {
-            Trace.WriteLine(Invariant($"Loading Media in on Chromecast {device.Name}"));
+            Trace.WriteLine(Invariant($"Loading Media [{playUri}] in on Chromecast {device.Name}"));
 
             var metadata = new GenericMediaMetadata()
             {
@@ -136,7 +129,7 @@ namespace Hspi.Chromecast
                                                 metadata: metadata,
                                                 duration: duration.HasValue ? duration.Value.TotalSeconds : 0D).ConfigureAwait(false);
 
-            Trace.WriteLine(Invariant($"Loaded Media in on Chromecast {device.Name}"));
+            Trace.WriteLine(Invariant($"Loaded Media [{playUri}] in on Chromecast {device.Name}"));
             return mediaStatus;
         }
 

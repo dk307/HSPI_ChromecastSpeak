@@ -291,7 +291,7 @@ namespace Hspi
 
             if (ipAddresses.Length == 0)
             {
-                throw new Exception("No Local IP4 Address Found");
+                throw new IOException("No Local IP4 Address Found");
             }
             return ipAddresses.First();
         }

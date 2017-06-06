@@ -6,7 +6,6 @@ using SharpCaster.Models.ChromecastStatus;
 using SharpCaster.Models.MediaStatus;
 using SharpCaster.Models.Metadata;
 using System;
-
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,6 +39,7 @@ namespace SharpCaster.Channels
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public async Task<MediaStatus> GetMediaStatus(string transportId, CancellationToken token)
         {
             int requestId = RequestIdProvider.Next;

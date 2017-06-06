@@ -77,7 +77,7 @@ namespace SharpCaster.Services
                 if (client != null)
                 {
                     stopTokenSource.Cancel();
-                    client.Disconnect();   //  this should be called after wait, but adds few seconds to shutdown
+                    client.Disconnect();
                     await readTask.WaitForFinishNoCancelException().ConfigureAwait(false);
                 }
             }

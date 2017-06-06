@@ -20,7 +20,7 @@ namespace Hspi
     internal class Plugin : HspiBase, ILogger
     {
         public Plugin()
-            : base(PluginData.PlugInName, supportConfigDevice: true)
+            : base(PluginData.PlugInName)
         {
         }
 
@@ -149,7 +149,7 @@ namespace Hspi
             }
             catch (Exception ex)
             {
-                LogWarning(Invariant($"Failed to Speak With: {ex.GetFullMessage()}"));
+                LogWarning(Invariant($"Failed to Speak [{text}] With: {ex.GetFullMessage()}"));
             }
 
             if (pluginConfig.ForwardSpeach)
@@ -160,39 +160,58 @@ namespace Hspi
 
         private async Task Speak(string text, IEnumerable<ChromecastDevice> devices)
         {
-            bool isFileName = IsReferingToFile(text);
-
-            VoiceData voiceData;
-            if (isFileName)
-            {
-                voiceData = await VoiceDataFromFile.LoadFromFile(text, ShutdownCancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                var voiceGenerator = new VoiceGenerator(this, text, pluginConfig.SAPIVoice);
-                voiceData = await voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken).ConfigureAwait(false);
-            }
-
-            var uri = await webServerManager.Add(voiceData.Data, voiceData.Extension, voiceData.Duration).ConfigureAwait(false);
-
             var stopTokenSource = new CancellationTokenSource();
-            var combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, ShutdownCancellationToken);
 
-            TimeSpan timeout = MediaWebServerManager.FileEntryExpiry;
-            if (voiceData.Duration.HasValue)
+            try
             {
-                timeout.Add(voiceData.Duration.Value);
-            }
+                bool isFileName = IsReferingToFile(text);
 
-            stopTokenSource.CancelAfter(timeout);
-            List<Task> playTasks = new List<Task>();
-            foreach (var device in devices)
+                VoiceData voiceData;
+                if (isFileName)
+                {
+                    voiceData = await VoiceDataFromFile.LoadFromFile(text, ShutdownCancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    var voiceGenerator = new VoiceGenerator(this, text, pluginConfig.SAPIVoice);
+                    voiceData = await voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken).ConfigureAwait(false);
+                }
+
+                var uri = await webServerManager.Add(voiceData.Data, voiceData.Extension, voiceData.Duration).ConfigureAwait(false);
+
+                var combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, ShutdownCancellationToken);
+
+                TimeSpan timeout = MediaWebServerManager.FileEntryExpiry;
+                if (voiceData.Duration.HasValue)
+                {
+                    timeout.Add(voiceData.Duration.Value);
+                }
+
+                stopTokenSource.CancelAfter(timeout);
+                List<Task> playTasks = new List<Task>();
+                foreach (var device in devices)
+                {
+                    SimpleChromecast chromecast = new SimpleChromecast(this, device, uri, voiceData.Duration, device.Volume);
+                    playTasks.Add(chromecast.Play(combinedStopTokenSource.Token));
+                }
+
+                await Task.WhenAll(playTasks.ToArray()).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException ex)
             {
-                SimpleChromecast chromecast = new SimpleChromecast(this, device, uri, voiceData.Duration, device.Volume);
-                playTasks.Add(chromecast.Play(combinedStopTokenSource.Token));
+                if (stopTokenSource.IsCancellationRequested)
+                {
+                    LogWarning(Invariant($"Failed to Speak [{text}] With Timeout Error: {ex.GetFullMessage()}"));
+                }
+                else
+                {
+                    LogWarning(Invariant($"Failed to Speak [{text}] With: {ex.GetFullMessage()}"));
+                }
             }
-
-            await Task.WhenAll(playTasks.ToArray()).ConfigureAwait(false);
+            catch (Exception ex)
+            {
+                LogWarning(Invariant($"Failed to Speak [{text}] With: {ex.GetFullMessage()}"));
+            }
         }
 
         private bool IsReferingToFile(string text)
