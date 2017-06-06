@@ -139,15 +139,15 @@ namespace Hspi.Chromecast
             ChromecastStatus status = await client.ReceiverChannel.GetChromecastStatus(cancellationToken).ConfigureAwait(false);
 
             var defaultApplication = GetDefaultApplication(status);
-            if (defaultApplication == null)
-            {
-                status = await client.ReceiverChannel.LaunchApplication(defaultAppId, cancellationToken).ConfigureAwait(false);
-                defaultApplication = GetDefaultApplication(status);
-            }
-            else
-            {
-                Trace.WriteLine(Invariant($"Default app is already running on Chromecast {device.Name}"));
-            }
+            //if (defaultApplication == null)
+            //{
+            status = await client.ReceiverChannel.LaunchApplication(defaultAppId, cancellationToken).ConfigureAwait(false);
+            defaultApplication = GetDefaultApplication(status);
+            //}
+            //else
+            //{
+            //    Trace.WriteLine(Invariant($"Default app is already running on Chromecast {device.Name}"));
+            //}
 
             if (defaultApplication == null)
             {
