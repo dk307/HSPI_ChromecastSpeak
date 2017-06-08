@@ -17,7 +17,7 @@ namespace Hspi
     /// </summary>
     /// <seealso cref="Hspi.HspiBase" />
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class Plugin : HspiBase, ILogger
+    internal class Plugin : HspiBase
     {
         public Plugin()
             : base(PluginData.PlugInName)
@@ -74,11 +74,11 @@ namespace Hspi
             Task.Factory.StartNew(() => StartWebServer());
         }
 
-        public override void DebugLog(string message)
+        public override void LogDebug(string message)
         {
             if (pluginConfig.DebugLogging)
             {
-                base.DebugLog(message);
+                base.LogDebug(message);
             }
         }
 

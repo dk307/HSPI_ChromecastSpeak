@@ -2,7 +2,7 @@
 {
     internal interface ILogger
     {
-        void DebugLog(string message);
+        void LogDebug(string message);
 
         void LogInfo(string message);
 

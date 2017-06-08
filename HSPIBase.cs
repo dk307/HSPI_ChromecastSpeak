@@ -21,7 +21,7 @@ namespace Hspi
     /// <seealso cref="Hspi.IPlugInAPI2" />
     /// <seealso cref="System.IDisposable" />
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal abstract class HspiBase : IPlugInAPI2, IDisposable
+    internal abstract class HspiBase : IPlugInAPI2, IDisposable, ILogger
     {
         protected HspiBase(string name, int capabilities = (int)Enums.eCapabilities.CA_IO, string instanceFriendlyName = "",
                            bool supportMutipleInstances = false, int accessLevel = 1, bool supportsMultipleInstancesSingleEXE = true,
@@ -277,14 +277,14 @@ namespace Hspi
 
         protected override int GetTriggerCount() => 0;
 
-        public virtual void DebugLog(string message)
+        public virtual void LogDebug(string message)
         {
             HS.WriteLog(Name, Invariant($"Debug:{message}"));
         }
 
         public void LogError(string message)
         {
-            HS.WriteLog(Name, Invariant($"Error:{message}"));
+            HS.WriteLogEx(Name, Invariant($"Error:{message}"), "#FF0000");
         }
 
         public void LogInfo(string message)
@@ -294,7 +294,7 @@ namespace Hspi
 
         public void LogWarning(string message)
         {
-            HS.WriteLog(Name, Invariant($"Warning:{message}"));
+            HS.WriteLogEx(Name, Invariant($"Warning:{message}"), "#D58000");
         }
 
         private HSTraceListener hsTraceListener;

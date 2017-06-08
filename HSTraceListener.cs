@@ -24,7 +24,7 @@ namespace Hspi
         {
             if (loggerWeakReference.TryGetTarget(out var logger))
             {
-                logger.DebugLog(message);
+                logger.LogDebug(message);
             }
         }
 

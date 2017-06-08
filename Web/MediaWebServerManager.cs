@@ -32,7 +32,7 @@ namespace Hspi.Web
                     throw new HspiException("Server is not running.");
                 }
                 string path = Invariant($"path{pathNumber}.{extension}");
-                logger.DebugLog(Invariant($"Adding {path} to Web Server with {buffer.Length} Audio bytes"));
+                logger.LogDebug(Invariant($"Adding {path} to Web Server with {buffer.Length} Audio bytes"));
 
                 pathNumber++;
                 var expiry = DateTimeOffset.Now.Add(FileEntryExpiry);
@@ -103,7 +103,7 @@ namespace Hspi.Web
             {
                 if (webServer != null)
                 {
-                    logger.DebugLog("Stopping old webserver if running.");
+                    logger.LogDebug("Stopping old webserver if running.");
                 }
                 // Stop any existing server
                 webServerTokenSource?.Cancel();
