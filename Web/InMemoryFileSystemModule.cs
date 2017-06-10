@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -299,16 +300,16 @@ namespace Hspi.Web
                 return true;
             }
 
-            if ((range.Length == 2 && int.TryParse(range[0], out lowerByteIndex) &&
+            if ((range.Length == 2 && int.TryParse(range[0], NumberStyles.Any, CultureInfo.InvariantCulture, out lowerByteIndex) &&
                  string.IsNullOrWhiteSpace(range[1])) ||
-                (range.Length == 1 && int.TryParse(range[0], out lowerByteIndex)))
+                (range.Length == 1 && int.TryParse(range[0], NumberStyles.Any, CultureInfo.InvariantCulture, out lowerByteIndex)))
             {
                 upperByteIndex = (int)fileSize - 1;
                 return true;
             }
 
             if (range.Length == 2 && string.IsNullOrWhiteSpace(range[0]) &&
-                int.TryParse(range[1], out upperByteIndex))
+                int.TryParse(range[1], NumberStyles.Any, CultureInfo.InvariantCulture, out upperByteIndex))
             {
                 lowerByteIndex = (int)fileSize - upperByteIndex - 1;
                 upperByteIndex = (int)fileSize - 1;

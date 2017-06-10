@@ -129,7 +129,7 @@ namespace Hspi
                     string volumeString = parts[VolumeId];
                     short volume;
 
-                    if (!short.TryParse(volumeString, out volume))
+                    if (!short.TryParse(volumeString, NumberStyles.Any, CultureInfo.InvariantCulture, out volume))
                     {
                         volume = -1;
                     }
@@ -167,7 +167,7 @@ namespace Hspi
 
                 ushort port = 0;
                 if (string.IsNullOrWhiteSpace(parts[ServerPortId]) ||
-                   !ushort.TryParse(parts[ServerPortId], out port))
+                   !ushort.TryParse(parts[ServerPortId], NumberStyles.Any, CultureInfo.InvariantCulture, out port))
                 {
                     results.AppendLine("Port is not Valid.<br>");
                 }
