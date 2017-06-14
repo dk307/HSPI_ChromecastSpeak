@@ -70,7 +70,7 @@ namespace Hspi
                 configLock.EnterReadLock();
                 try
                 {
-                    return new ReadOnlyDictionary<string, ChromecastDevice>(devices);
+                    return new Dictionary<string, ChromecastDevice>(devices);
                 }
                 finally
                 {
