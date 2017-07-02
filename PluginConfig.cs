@@ -274,7 +274,7 @@ namespace Hspi
         {
             // if there is override address, use it
             var overrideIPAddress = WebServerIPAddress;
-            if ((overrideIPAddress != null) && (overrideIPAddress.Equals(IPAddress.Any)))
+            if ((overrideIPAddress != null) && (!overrideIPAddress.Equals(IPAddress.Any)))
             {
                 return overrideIPAddress;
             }
