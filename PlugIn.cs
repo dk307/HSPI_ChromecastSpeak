@@ -183,7 +183,7 @@ namespace Hspi
 
                 if (voiceData.Data.Length == 0)
                 {
-                    throw new VoiceGenerationException(Invariant($"Voice for [{text}] is of Zero Bytes. Check Voice Text or File."));
+                    throw new VoiceGenerationException(Invariant($"Data for [{text}] is Zero Bytes. Check Voice Text or File."));
                 }
 
                 var uri = await webServerManager.Add(voiceData.Data, voiceData.Extension, voiceData.Duration).ConfigureAwait(false);
