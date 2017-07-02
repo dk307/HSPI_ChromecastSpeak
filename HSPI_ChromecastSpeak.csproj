@@ -135,6 +135,7 @@
     <Compile Include="ChromecastDevice.cs" />
     <Compile Include="ConfigPage.cs" />
     <Compile Include="ExceptionHelper.cs" />
+    <Compile Include="Exceptions\VoiceGenerationException.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />
     <Compile Include="HSTraceListener.cs" />

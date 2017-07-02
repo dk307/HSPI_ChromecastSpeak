@@ -1,10 +1,12 @@
 ﻿using HomeSeerAPI;
 using Hspi.Chromecast;
+using Hspi.Exceptions;
 using Hspi.Voice;
 using Hspi.Web;
 using NullGuard;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -175,6 +177,13 @@ namespace Hspi
                 {
                     var voiceGenerator = new VoiceGenerator(this, text, pluginConfig.SAPIVoice);
                     voiceData = await voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken).ConfigureAwait(false);
+                }
+
+                Trace.WriteLine(Invariant($"Voice for [{text}] is {voiceData.Data.Length} bytes with duration of {voiceData.Duration} of type {voiceData.Extension}"));
+
+                if (voiceData.Data.Length == 0)
+                {
+                    throw new VoiceGenerationException(Invariant($"Voice for [{text}] is of Zero Bytes. Check Voice Text or File."));
                 }
 
                 var uri = await webServerManager.Add(voiceData.Data, voiceData.Extension, voiceData.Duration).ConfigureAwait(false);
