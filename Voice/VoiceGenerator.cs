@@ -6,6 +6,7 @@ using System.Speech.AudioFormat;
 using System.Speech.Synthesis;
 using System.Threading;
 using System.Threading.Tasks;
+using Hspi.Exceptions;
 
 namespace Hspi.Voice
 {
@@ -24,7 +25,7 @@ namespace Hspi.Voice
 
         public async Task<VoiceData> GenerateVoiceAsWavFile(CancellationToken token)
         {
-            Trace.WriteLine("Starting Generation of Wav using SAPI ");
+            Trace.WriteLine("Starting Generation of Wav using SAPI");
             var audioFormat = new SpeechAudioFormatInfo(44100, AudioBitsPerSample.Sixteen, AudioChannel.Stereo);
 
             using (var speechSynthesizer = new SpeechSynthesizer())
@@ -40,11 +41,30 @@ namespace Hspi.Voice
                     TaskCompletionSource<bool> finished = new TaskCompletionSource<bool>(token);
                     speechSynthesizer.SpeakCompleted += (object sender, SpeakCompletedEventArgs e) =>
                     {
-                        finished.SetResult(true);
+                        if (e.Error != null)
+                        {
+                            finished.TrySetException(e.Error);
+                        }
+                        else if (e.Cancelled)
+                        {
+                            finished.TrySetCanceled();
+                        }
+                        else
+                        {
+                            finished.TrySetResult(true);
+                        }
                     };
                     token.Register(() => speechSynthesizer.SpeakAsyncCancelAll());
-                    speechSynthesizer.SpeakAsync(this.promptBuilder);
-                    await finished.Task.ConfigureAwait(false);
+                    try
+                    {
+                        var prompt = speechSynthesizer.SpeakAsync(promptBuilder);
+                        await finished.Task.ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new VoiceGenerationException(Invariant($"Voice Generation Failed with {ex.GetFullMessage()}"));
+                    }
+
                     speechSynthesizer.SetOutputToNull();
 
                     Trace.WriteLine("Finished Generation of Wav using SAPI");
