@@ -13,9 +13,8 @@ namespace Hspi.Web
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class MediaWebServerManager : IDisposable
     {
-        public MediaWebServerManager(ILogger logger, CancellationToken shutdownCancellationToken)
+        public MediaWebServerManager(CancellationToken shutdownCancellationToken)
         {
-            this.logger = logger;
             this.shutdownCancellationToken = shutdownCancellationToken;
         }
 
@@ -32,7 +31,7 @@ namespace Hspi.Web
                     throw new HspiException("Server is not running.");
                 }
                 string path = Invariant($"path{pathNumber}.{extension}");
-                logger.LogDebug(Invariant($"Adding {path} to Web Server with {buffer.Length} Audio bytes"));
+                Trace.WriteLine(Invariant($"Adding {path} to Web Server with {buffer.Length} Audio bytes"));
 
                 pathNumber++;
                 var expiry = DateTimeOffset.Now.Add(FileEntryExpiry);
@@ -70,7 +69,7 @@ namespace Hspi.Web
                     CancellationTokenSource.CreateLinkedTokenSource(webServerTokenSource.Token, shutdownCancellationToken);
 
                 webServer = new MediaWebServer(address, port);
-                logger.LogInfo(Invariant($"Starting Web Server on {address}:{port}"));
+                Trace.TraceInformation(Invariant($"Starting Web Server on {address}:{port}"));
 
                 webServerTask = webServer.StartListening(combinedWebServerTokenSource.Token)
                                          .ContinueWith((x) => WebServerFinished(x), combinedWebServerTokenSource.Token);
@@ -103,7 +102,7 @@ namespace Hspi.Web
             {
                 if (webServer != null)
                 {
-                    logger.LogDebug("Stopping old webserver if running.");
+                    Trace.WriteLine("Stopping old webserver if running.");
                 }
                 // Stop any existing server
                 webServerTokenSource?.Cancel();
@@ -129,7 +128,7 @@ namespace Hspi.Web
         {
             if (task.IsFaulted)
             {
-                logger.LogWarning(Invariant($"WebServer Stopped with error {ExceptionHelper.GetFullMessage(task.Exception)}"));
+                Trace.TraceWarning(Invariant($"WebServer Stopped with error {ExceptionHelper.GetFullMessage(task.Exception)}"));
             }
             else
             {
@@ -137,7 +136,6 @@ namespace Hspi.Web
             }
         }
 
-        private readonly ILogger logger;
         private readonly SemaphoreSlim webServerLock = new SemaphoreSlim(1);
         private CancellationTokenSource combinedWebServerTokenSource;
         private bool disposedValue = false;

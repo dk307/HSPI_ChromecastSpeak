@@ -33,7 +33,7 @@ namespace Hspi
             {
                 pluginConfig = new PluginConfig(HS);
                 configPage = new ConfigPage(HS, pluginConfig);
-                webServerManager = new MediaWebServerManager(this, ShutdownCancellationToken);
+                webServerManager = new MediaWebServerManager(ShutdownCancellationToken);
                 LogInfo("Starting Plugin");
 #if DEBUG
                 pluginConfig.DebugLogging = true;
@@ -78,7 +78,7 @@ namespace Hspi
 
         public override void LogDebug(string message)
         {
-            if (pluginConfig.DebugLogging)
+            if ((pluginConfig!= null) && pluginConfig.DebugLogging)
             {
                 base.LogDebug(message);
             }
@@ -175,7 +175,7 @@ namespace Hspi
                 }
                 else
                 {
-                    var voiceGenerator = new VoiceGenerator(this, text, pluginConfig.SAPIVoice);
+                    var voiceGenerator = new VoiceGenerator(text, pluginConfig.SAPIVoice);
                     voiceData = await voiceGenerator.GenerateVoiceAsWavFile(ShutdownCancellationToken).ConfigureAwait(false);
                 }
 
@@ -200,7 +200,7 @@ namespace Hspi
                 List<Task> playTasks = new List<Task>();
                 foreach (var device in devices)
                 {
-                    SimpleChromecast chromecast = new SimpleChromecast(this, device, uri, voiceData.Duration, device.Volume);
+                    SimpleChromecast chromecast = new SimpleChromecast(device, uri, voiceData.Duration, device.Volume);
                     playTasks.Add(chromecast.Play(combinedStopTokenSource.Token));
                 }
 

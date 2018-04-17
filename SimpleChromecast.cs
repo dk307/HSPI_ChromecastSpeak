@@ -20,13 +20,12 @@ namespace Hspi.Chromecast
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class SimpleChromecast
     {
-        public SimpleChromecast(ILogger logger, ChromecastDevice device, Uri playUri, TimeSpan? duration, double? volume)
+        public SimpleChromecast(ChromecastDevice device, Uri playUri, TimeSpan? duration, double? volume)
         {
             this.volume = volume;
             this.duration = duration;
             this.playUri = playUri;
             this.device = device;
-            this.logger = logger;
         }
 
         public async Task Play(CancellationToken cancellationToken)
@@ -80,7 +79,7 @@ namespace Hspi.Chromecast
                     Trace.WriteLine(Invariant($"Finished Restoring Volume on Chromecast {device.Name}"));
                 }
 
-                this.logger.LogInfo(Invariant($"Played Speech on Chromecast {device.Name}"));
+                Trace.TraceInformation(Invariant($"Played Speech on Chromecast {device.Name}"));
                 Trace.WriteLine(Invariant($"Disconnecting Chromecast {device.Name}"));
                 await client.Disconnect(cancellationToken).ConfigureAwait(false);
                 Trace.WriteLine(Invariant($"Disconnected Chromecast {device.Name}"));
@@ -190,7 +189,6 @@ namespace Hspi.Chromecast
 
         private MediaStatus loadedMediaStatus;
         private const string defaultAppId = "CC1AD845";
-        private readonly ILogger logger;
         private readonly ChromecastDevice device;
         private readonly Uri playUri;
         private readonly TimeSpan? duration;

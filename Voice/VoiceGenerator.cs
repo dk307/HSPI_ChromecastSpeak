@@ -15,10 +15,9 @@ namespace Hspi.Voice
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class VoiceGenerator
     {
-        public VoiceGenerator(ILogger logger, string text, [AllowNull]string sapiVoiceName)
+        public VoiceGenerator(string text, [AllowNull]string sapiVoiceName)
         {
             this.sapiVoiceName = sapiVoiceName;
-            this.logger = logger;
             promptBuilder = new PromptBuilder(System.Globalization.CultureInfo.CurrentCulture);
             promptBuilder.AppendSsmlMarkup(text);
         }
@@ -86,11 +85,10 @@ namespace Hspi.Voice
             }
             catch (Exception ex)
             {
-                logger.LogWarning(Invariant($"Failed to select Voice {sapiVoiceName} with {ExceptionHelper.GetFullMessage(ex)}"));
+                Trace.TraceWarning(Invariant($"Failed to select Voice {sapiVoiceName} with {ExceptionHelper.GetFullMessage(ex)}"));
             }
         }
 
-        private readonly ILogger logger;
         private readonly PromptBuilder promptBuilder;
         private readonly string sapiVoiceName;
     }
