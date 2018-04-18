@@ -127,9 +127,6 @@
     <Reference Include="Unosquare.Labs.EmbedIO, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\EmbedIO.1.13.0\lib\net47\Unosquare.Labs.EmbedIO.dll</HintPath>
     </Reference>
-    <Reference Include="Unosquare.Swan, Version=0.14.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Unosquare.Swan.0.14.0\lib\net452\Unosquare.Swan.dll</HintPath>
-    </Reference>
     <Reference Include="Unosquare.Swan.Lite, Version=0.26.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Unosquare.Swan.Lite.0.26.0\lib\net452\Unosquare.Swan.Lite.dll</HintPath>
     </Reference>
@@ -267,7 +264,6 @@
       <InputAssemblies Include="$(OutputPath)\protobuf-net.dll" />
       <InputAssemblies Include="$(OutputPath)\TagLib.Portable.dll" />
       <InputAssemblies Include="$(OutputPath)\Unosquare.Labs.EmbedIO.dll" />
-      <InputAssemblies Include="$(OutputPath)\Unosquare.Swan.dll" />
       <InputAssemblies Include="$(OutputPath)\Unosquare.Swan.Lite.dll" />
     </ItemGroup>
     <ItemGroup>

@@ -6,6 +6,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading;
 using Unosquare.Swan;
 
@@ -279,7 +281,7 @@ namespace Hspi
                 return overrideIPAddress;
             }
 
-            var ipAddresses = Network.GetIPv4Addresses(false);
+            var ipAddresses = GetIPv4Addresses(NetworkInterfaceType.Unknown, true, false);
 
             var hsAddress = IPAddress.Parse(HS.GetIPAddress());
 
@@ -340,6 +342,46 @@ namespace Hspi
                 var ConfigChangedCopy = ConfigChanged;
                 ConfigChangedCopy(this, EventArgs.Empty);
             }
+        }
+
+        /// <summary>
+        /// Retrieves the local ip addresses.
+        /// </summary>
+        /// <param name="interfaceType">Type of the interface.</param>
+        /// <param name="skipTypeFilter">if set to <c>true</c> [skip type filter].</param>
+        /// <param name="includeLoopback">if set to <c>true</c> [include loopback].</param>
+        /// <returns>An array of local ip addresses</returns>
+        public static IPAddress[] GetIPv4Addresses(
+            NetworkInterfaceType interfaceType,
+            bool skipTypeFilter = false,
+            bool includeLoopback = false)
+        {
+            var addressList = new List<IPAddress>();
+            var interfaces = NetworkInterface.GetAllNetworkInterfaces()
+                .Where(ni =>
+#if NET452
+                    ni.IsReceiveOnly == false &&
+#endif
+                    (skipTypeFilter || ni.NetworkInterfaceType == interfaceType) &&
+                    ni.OperationalStatus == OperationalStatus.Up)
+                .ToArray();
+
+            foreach (var networkInterface in interfaces)
+            {
+                var properties = networkInterface.GetIPProperties();
+                if (properties.GatewayAddresses.Any(g => g.Address.AddressFamily == AddressFamily.InterNetwork) ==
+                    false)
+                    continue;
+
+                addressList.AddRange(properties.UnicastAddresses
+                    .Where(i => i.Address.AddressFamily == AddressFamily.InterNetwork)
+                    .Select(i => i.Address));
+            }
+
+            if (includeLoopback || interfaceType == NetworkInterfaceType.Loopback)
+                addressList.Add(IPAddress.Loopback);
+
+            return addressList.ToArray();
         }
 
         #region IDisposable Support

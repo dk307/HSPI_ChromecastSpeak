@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<RuleSet Name="Rules for HSPI_WUWeather" Description="Code analysis rules for HSPI_WUWeather.csproj." ToolsVersion="15.0">
+<RuleSet Name="Rules for Project" Description="Code analysis rules for Project" ToolsVersion="15.0">
   <IncludeAll Action="Warning" />
   <Rules AnalyzerId="Microsoft.Analyzers.ManagedCodeAnalysis" RuleNamespace="Microsoft.Rules.Managed">
     <Rule Id="CA1014" Action="None" />
