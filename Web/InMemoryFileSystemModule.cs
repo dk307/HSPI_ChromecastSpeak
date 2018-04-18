@@ -94,7 +94,7 @@ namespace Hspi.Web
             AddHandler(ModuleMap.AnyPath, HttpVerbs.Get, (context, ct) => HandleGet(context, ct));
         }
 
-        private async Task<bool> HandleGet(Unosquare.Net.HttpListenerContext context, CancellationToken ct, bool sendBuffer = true)
+        private async Task<bool> HandleGet(HttpListenerContext context, CancellationToken ct, bool sendBuffer = true)
         {
             Trace.WriteLine($"Request Type {context.RequestVerb()} from {context.Request.RemoteEndPoint} for {context.Request.Url}");
 
@@ -198,7 +198,7 @@ namespace Hspi.Web
             return true;
         }
 
-        private async Task<bool> SendFileList(Unosquare.Net.HttpListenerContext context, CancellationToken ct)
+        private async Task<bool> SendFileList(HttpListenerContext context, CancellationToken ct)
         {
             StringBuilder stb = new StringBuilder();
 
@@ -225,7 +225,7 @@ namespace Hspi.Web
             return await context.HtmlResponseAsync(stb.ToString(), cancellationToken: ct).ConfigureAwait(false);
         }
 
-        private static async Task WriteToOutputMemoryStream(Unosquare.Net.HttpListenerContext context, long byteLength, byte[] buffer,
+        private static async Task WriteToOutputMemoryStream(HttpListenerContext context, long byteLength, byte[] buffer,
             int lowerByteIndex, CancellationToken ct)
         {
             checked
@@ -242,7 +242,7 @@ namespace Hspi.Web
             }
         }
 
-        private void SetHeaders(Unosquare.Net.HttpListenerContext context, string localPath, string utcFileDateString)
+        private void SetHeaders(HttpListenerContext context, string localPath, string utcFileDateString)
         {
             var fileExtension = Path.GetExtension(localPath);
 
@@ -308,14 +308,14 @@ namespace Hspi.Web
             return false;
         }
 
-        private static string GetUrlPath(Unosquare.Net.HttpListenerContext context)
+        private static string GetUrlPath(HttpListenerContext context)
         {
             var urlPath = context.RequestPathCaseSensitive().Replace('/', Path.DirectorySeparatorChar);
             urlPath = urlPath.TrimStart(Path.DirectorySeparatorChar);
             return urlPath;
         }
 
-        private void SetStatusCode304(Unosquare.Net.HttpListenerContext context)
+        private void SetStatusCode304(HttpListenerContext context)
         {
             context.Response.AddHeader(Headers.CacheControl,
                 DefaultHeaders.ContainsKey(Headers.CacheControl)

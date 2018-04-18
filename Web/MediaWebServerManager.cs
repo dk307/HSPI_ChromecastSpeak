@@ -124,7 +124,7 @@ namespace Hspi.Web
             }
         }
 
-        private static void WebServerFinished(Task task)
+        private void WebServerFinished(Task task)
         {
             if (task.IsFaulted)
             {
