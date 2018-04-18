@@ -10,10 +10,11 @@ using System.Runtime.Caching;
 using System.Threading;
 using System.Threading.Tasks;
 using Unosquare.Labs.EmbedIO;
+using Unosquare.Labs.EmbedIO.Constants;
+using System.Text;
 
 namespace Hspi.Web
 {
-    using System.Text;
     using static System.FormattableString;
 
     /// <summary>
@@ -21,15 +22,18 @@ namespace Hspi.Web
     /// </summary>
     internal class InMemoryFileSystemModule : WebModuleBase
     {
-        private readonly Dictionary<string, string> m_MimeTypes = new Dictionary<string, string>(Constants.StandardStringComparer);
+        private const string BrowserTimeFormat = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
 
+        private static CultureInfo StandardHeaderCultureInfo => CultureInfo.CreateSpecificCulture("en-US");
+ 
         /// <summary>
         /// Gets the collection holding the MIME types.
         /// </summary>
         /// <value>
         /// The MIME types.
         /// </value>
-        public ReadOnlyDictionary<string, string> MimeTypes => new ReadOnlyDictionary<string, string>(m_MimeTypes);
+        public static IReadOnlyDictionary<string, string> MimeTypes 
+            => new ReadOnlyDictionary<string, string>(Unosquare.Labs.EmbedIO.Constants.MimeTypes.DefaultMimeTypes);
 
         /// <summary>
         /// The default headers
@@ -78,12 +82,6 @@ namespace Hspi.Web
         {
             RamCache = MemoryCache.Default;
 
-            // Populate the default MIME types
-            foreach (var kvp in Constants.DefaultMimeTypes)
-            {
-                m_MimeTypes.Add(kvp.Key, kvp.Value);
-            }
-
             if (headers != null)
             {
                 foreach (var header in headers)
@@ -96,7 +94,7 @@ namespace Hspi.Web
             AddHandler(ModuleMap.AnyPath, HttpVerbs.Get, (context, ct) => HandleGet(context, ct));
         }
 
-        private async Task<bool> HandleGet(HttpListenerContext context, CancellationToken ct, bool sendBuffer = true)
+        private async Task<bool> HandleGet(Unosquare.Net.HttpListenerContext context, CancellationToken ct, bool sendBuffer = true)
         {
             Trace.WriteLine($"Request Type {context.RequestVerb()} from {context.Request.RemoteEndPoint} for {context.Request.Url}");
 
@@ -107,11 +105,11 @@ namespace Hspi.Web
             }
 
             var eTagValid = false;
-            var partialHeader = context.RequestHeader(Constants.HeaderRange);
+            var partialHeader = context.RequestHeader(Headers.Range);
             var usingPartial = string.IsNullOrWhiteSpace(partialHeader) == false &&
                                 partialHeader.StartsWith("bytes=", StringComparison.Ordinal);
 
-            var requestHash = context.RequestHeader(Constants.HeaderIfNotMatch);
+            var requestHash = context.RequestHeader(Headers.IfNotMatch);
 
             CacheItem cacheItem = RamCache.GetCacheItem(requestedPath);
 
@@ -126,7 +124,7 @@ namespace Hspi.Web
 
             if (string.IsNullOrWhiteSpace(requestHash) || requestHash != cacheEntry.Hash)
             {
-                context.Response.AddHeader(Constants.HeaderETag, cacheEntry.Hash);
+                context.Response.AddHeader(Headers.ETag, cacheEntry.Hash);
             }
             else
             {
@@ -135,10 +133,10 @@ namespace Hspi.Web
 
             // check to see if the file was modified or e-tag is the same
             var utcFileDateString = cacheEntry.LastModified.ToUniversalTime()
-                .ToString(Constants.BrowserTimeFormat, Constants.StandardCultureInfo);
+                .ToString(BrowserTimeFormat, StandardHeaderCultureInfo);
 
             if (usingPartial == false &&
-                (eTagValid || context.RequestHeader(Constants.HeaderIfModifiedSince).Equals(utcFileDateString)))
+                (eTagValid || context.RequestHeader(Headers.IfModifiedSince).Equals(utcFileDateString)))
             {
                 SetStatusCode304(context);
                 Trace.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
@@ -165,13 +163,13 @@ namespace Hspi.Web
                 if (upperByteIndex > (fileSize - 1))
                 {
                     context.Response.StatusCode = 416;
-                    context.Response.AddHeader(Constants.HeaderContentRanges, Invariant($"bytes */{fileSize}"));
+                    context.Response.AddHeader(Headers.ContentRanges, Invariant($"bytes */{fileSize}"));
                     Trace.WriteLine($"Request From {context.Request.RemoteEndPoint} for {context.Request.Url} returned with {context.Response.StatusCode}");
                     return true;
                 }
 
                 byteLength = upperByteIndex - lowerByteIndex + 1;
-                context.Response.AddHeader(Constants.HeaderContentRanges, Invariant($"bytes {lowerByteIndex}-{upperByteIndex}/{fileSize}"));
+                context.Response.AddHeader(Headers.ContentRanges, Invariant($"bytes {lowerByteIndex}-{upperByteIndex}/{fileSize}"));
                 if (byteLength != fileSize)
                 {
                     context.Response.StatusCode = 206;
@@ -200,7 +198,7 @@ namespace Hspi.Web
             return true;
         }
 
-        private async Task<bool> SendFileList(HttpListenerContext context)
+        private async Task<bool> SendFileList(Unosquare.Net.HttpListenerContext context)
         {
             StringBuilder stb = new StringBuilder();
 
@@ -231,12 +229,12 @@ namespace Hspi.Web
             context.Response.ContentLength64 = data.LongLength;
             await context.Response.OutputStream.WriteAsync(data, 0, data.Length);
 
-            context.Response.ContentEncoding = Encoding.UTF8;
+            //context.Response.ContentEncoding = Encoding.UTF8;
 
             return true;
         }
 
-        private static async Task WriteToOutputMemoryStream(HttpListenerContext context, long byteLength, byte[] buffer,
+        private static async Task WriteToOutputMemoryStream(Unosquare.Net.HttpListenerContext context, long byteLength, byte[] buffer,
             int lowerByteIndex, CancellationToken ct)
         {
             checked
@@ -253,30 +251,30 @@ namespace Hspi.Web
             }
         }
 
-        private void SetHeaders(HttpListenerContext context, string localPath, string utcFileDateString)
+        private void SetHeaders(Unosquare.Net.HttpListenerContext context, string localPath, string utcFileDateString)
         {
             var fileExtension = Path.GetExtension(localPath);
 
             if (MimeTypes.ContainsKey(fileExtension))
                 context.Response.ContentType = MimeTypes[fileExtension];
 
-            context.Response.AddHeader(Constants.HeaderCacheControl,
-                DefaultHeaders.ContainsKey(Constants.HeaderCacheControl)
-                    ? DefaultHeaders[Constants.HeaderCacheControl]
+            context.Response.AddHeader(Headers.CacheControl,
+                DefaultHeaders.ContainsKey(Headers.CacheControl)
+                    ? DefaultHeaders[Headers.CacheControl]
                     : "private");
 
-            context.Response.AddHeader(Constants.HeaderPragma,
-                DefaultHeaders.ContainsKey(Constants.HeaderPragma)
-                    ? DefaultHeaders[Constants.HeaderPragma]
+            context.Response.AddHeader(Headers.Pragma,
+                DefaultHeaders.ContainsKey(Headers.Pragma)
+                    ? DefaultHeaders[Headers.Pragma]
                     : string.Empty);
 
-            context.Response.AddHeader(Constants.HeaderExpires,
-                DefaultHeaders.ContainsKey(Constants.HeaderExpires)
-                    ? DefaultHeaders[Constants.HeaderExpires]
+            context.Response.AddHeader(Headers.Expires,
+                DefaultHeaders.ContainsKey(Headers.Expires)
+                    ? DefaultHeaders[Headers.Expires]
                     : string.Empty);
 
-            context.Response.AddHeader(Constants.HeaderLastModified, utcFileDateString);
-            context.Response.AddHeader(Constants.HeaderAcceptRanges, "bytes");
+            context.Response.AddHeader(Headers.LastModified, utcFileDateString);
+            context.Response.AddHeader(Headers.AcceptRanges, "bytes");
         }
 
         public void AddCacheFile(byte[] buffer, DateTimeOffset lastModified, string path, DateTimeOffset expiry)
@@ -319,28 +317,28 @@ namespace Hspi.Web
             return false;
         }
 
-        private static string GetUrlPath(HttpListenerContext context)
+        private static string GetUrlPath(Unosquare.Net.HttpListenerContext context)
         {
             var urlPath = context.RequestPathCaseSensitive().Replace('/', Path.DirectorySeparatorChar);
             urlPath = urlPath.TrimStart(Path.DirectorySeparatorChar);
             return urlPath;
         }
 
-        private void SetStatusCode304(HttpListenerContext context)
+        private void SetStatusCode304(Unosquare.Net.HttpListenerContext context)
         {
-            context.Response.AddHeader(Constants.HeaderCacheControl,
-                DefaultHeaders.ContainsKey(Constants.HeaderCacheControl)
-                    ? DefaultHeaders[Constants.HeaderCacheControl]
+            context.Response.AddHeader(Headers.CacheControl,
+                DefaultHeaders.ContainsKey(Headers.CacheControl)
+                    ? DefaultHeaders[Headers.CacheControl]
                     : "private");
 
-            context.Response.AddHeader(Constants.HeaderPragma,
-                DefaultHeaders.ContainsKey(Constants.HeaderPragma)
-                    ? DefaultHeaders[Constants.HeaderPragma]
+            context.Response.AddHeader(Headers.Pragma,
+                DefaultHeaders.ContainsKey(Headers.Pragma)
+                    ? DefaultHeaders[Headers.Pragma]
                     : string.Empty);
 
-            context.Response.AddHeader(Constants.HeaderExpires,
-                DefaultHeaders.ContainsKey(Constants.HeaderExpires)
-                    ? DefaultHeaders[Constants.HeaderExpires]
+            context.Response.AddHeader(Headers.Expires,
+                DefaultHeaders.ContainsKey(Headers.Expires)
+                    ? DefaultHeaders[Headers.Expires]
                     : string.Empty);
 
             context.Response.ContentType = string.Empty;

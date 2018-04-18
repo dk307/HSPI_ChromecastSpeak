@@ -4,6 +4,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Unosquare.Labs.EmbedIO;
+using Unosquare.Labs.EmbedIO.Constants;
 
 namespace Hspi.Web
 {
