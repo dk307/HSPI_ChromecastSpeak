@@ -101,7 +101,7 @@ namespace Hspi.Web
             var requestedPath = GetUrlPath(context);
             if (string.IsNullOrEmpty(requestedPath))
             {
-                return await SendFileList(context);
+                return await SendFileList(context, ct).ConfigureAwait(false);
             }
 
             var eTagValid = false;
@@ -198,7 +198,7 @@ namespace Hspi.Web
             return true;
         }
 
-        private async Task<bool> SendFileList(Unosquare.Net.HttpListenerContext context)
+        private async Task<bool> SendFileList(Unosquare.Net.HttpListenerContext context, CancellationToken ct)
         {
             StringBuilder stb = new StringBuilder();
 
@@ -216,22 +216,13 @@ namespace Hspi.Web
             foreach (var file in RamCache.OrderBy((key) => ((RamCacheEntry)key.Value).LastModified))
             {
                 RamCacheEntry entry = (RamCacheEntry)file.Value;
-                stb.AppendLine(Invariant($"<tr><td><a href=\"{file.Key}\">{file.Key}</a></td>"));
+                stb.AppendLine(Invariant($"<tr><td><a href=\"{WebUtility.HtmlEncode(file.Key)}\">{file.Key}</a></td>"));
                 stb.AppendLine(Invariant($"<td>{entry.Buffer.Length} bytes</td></td><td>{entry.LastModified}</td></tr>"));
             }
             stb.AppendLine(@"</table>");
             stb.AppendLine(@"</body></html>");
 
-            context.Response.ContentType = "text/html";
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
-
-            byte[] data = Encoding.UTF8.GetBytes(stb.ToString());
-            context.Response.ContentLength64 = data.LongLength;
-            await context.Response.OutputStream.WriteAsync(data, 0, data.Length);
-
-            //context.Response.ContentEncoding = Encoding.UTF8;
-
-            return true;
+            return await context.HtmlResponseAsync(stb.ToString(), cancellationToken: ct).ConfigureAwait(false);
         }
 
         private static async Task WriteToOutputMemoryStream(Unosquare.Net.HttpListenerContext context, long byteLength, byte[] buffer,
