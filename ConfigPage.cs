@@ -53,9 +53,9 @@ namespace Hspi
 
                 reset();
 
-                AddHeader(HS.GetPageHeader(Name, "Configuration", string.Empty, string.Empty, false, false));
-
                 System.Text.StringBuilder stb = new System.Text.StringBuilder();
+                stb.Append(HS.GetPageHeader(Name, "Configuration", string.Empty, string.Empty, false, false));
+
                 stb.Append(PageBuilderAndMenu.clsPageBuilder.DivStart("pluginpage", ""));
                 switch (pageType)
                 {
@@ -256,7 +256,7 @@ namespace Hspi
             stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmDeviceChange", "IdChange", "Post"));
 
             stb.Append(@"<div>");
-            stb.Append(@"<table class='full_width_table'");
+            stb.Append(@"<table class='full_width_table'>");
             stb.Append("<tr height='5'><td style='width:25%'></td><td style='width:20%'></td><td style='width:55%'></td></tr>");
             stb.Append(Invariant($"<tr><td class='tableheader' colspan=3>{header}</td></tr>"));
             stb.Append(Invariant($"<tr><td class='tablecell'>Name:</td><td class='tablecell' colspan=2>{HtmlTextBox(NameId, name, @readonly: !string.IsNullOrEmpty(id))}</td></tr>"));
@@ -289,7 +289,7 @@ namespace Hspi
             stb.Append(FormPageButton(CancelDeviceName, "Cancel"));
             stb.Append(Invariant($"</td><td></td></tr>"));
             stb.Append("<tr height='5'><td colspan=3></td></tr>");
-            stb.Append(@" </table>");
+            stb.Append(@"</table>");
             stb.Append(@"</div>");
             stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
 
@@ -314,7 +314,7 @@ namespace Hspi
         private string CreateDeviceListTable()
         {
             StringBuilder stb = new StringBuilder();
-            stb.Append(@"<table class='full_width_table'");
+            stb.Append(@"<table class='full_width_table'>");
             stb.Append("<tr height='5'><td colspan=4></td></tr>");
             stb.Append("<tr><td class='tableheader' colspan=4>Devices</td></tr>");
             stb.Append(@"<tr>" +
@@ -333,7 +333,7 @@ namespace Hspi
                 string volumeString = device.Value.Volume != null ?
                                         device.Value.Volume.Value.ToString(CultureInfo.InvariantCulture) : "Don't Change";
                 stb.Append(Invariant($"<td class='tablecell'>{volumeString}</td>"));
-                stb.Append(Invariant($"<td class='tablecell'>{PageTypeButton(Invariant($"Edit{device.Key}"), "Edit", EditDevicePageType, deviceId: device.Key)}</ td ></ tr > "));
+                stb.Append(Invariant($"<td class='tablecell'>{PageTypeButton(Invariant($"Edit{device.Key}"), "Edit", EditDevicePageType, deviceId: device.Key)}</td></tr> "));
             }
             stb.Append(Invariant($"<tr><td colspan=4>{PageTypeButton("Add New Device", AddNewName, EditDevicePageType)}</td><td></td></tr>"));
             stb.Append("<tr height='5'><td colspan=4></td></tr>");
@@ -350,7 +350,7 @@ namespace Hspi
             StringBuilder stb = new StringBuilder();
 
             stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmSettings", "Id", "Post"));
-            stb.Append(@"<table class='full_width_table'");
+            stb.Append(@"<table class='full_width_table'>");
             stb.Append("<tr height='2'><td width=25%></td><td></td></tr>");
             stb.Append("<tr><td class='tableheader' colspan=2>Settings</td></tr>");
             stb.Append(Invariant($@"<tr  class='tablecell'><td>Override Server IP Address:</td><td>{
@@ -388,12 +388,12 @@ namespace Hspi
             stb.Append(Invariant($@"<tr class='tablecell'><td>Debug Logging Enabled:</td><td>{
                                   FormCheckBox(DebugLoggingId, string.Empty, pluginConfig.DebugLogging, false)
                                   }</td></tr>"));
-            stb.Append(Invariant($"<tr class='tablecell'><td><div id='{SaveErrorDivId}' style='color:Red'></div></td><td></td></tr>"));
+            stb.Append(Invariant($"<tr class='tablecell'><td colspan=2><div id='{SaveErrorDivId}' style='color:Red'></div></td></tr>"));
 
-            stb.Append(Invariant($@"<tr class='tablecell'><td>{FormPageButton(SaveSettingName, "Save")}</td><td></td></tr>"));
+            stb.Append(Invariant($@"<tr class='tablecell'><td colspan=2>{FormPageButton(SaveSettingName, "Save")}</td></tr>"));
 
             stb.Append(@"<tr height='5'><td colspan=2></td></tr>");
-            stb.Append(@"</table");
+            stb.Append(@"</table>");
             stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
             return stb.ToString();
         }
