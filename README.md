@@ -4,6 +4,18 @@ HomeSeer plugin to speak on Chromecast devices
 
 On getting speak command from Homeseer, it converts Text to Wav file using SAPI. Then it hosts the file in embedded web server. Then it asks chromecast to play from embedded web server url.
 
+Setting
+------------
+![Settings](/asserts/settings.PNG "Settings")
+
+Chromecast Device Settings
+------------
+![Chromecast Settings](/asserts/chromecastsettings.PNG "Chromecast Settings")
+
+Firewall
+------------
+Open the firewall based on Settings. Windows 10 powershell script is included.
+![Firewall](/asserts/firewall.PNG "Firewall")
 
 Build State
 -----------
