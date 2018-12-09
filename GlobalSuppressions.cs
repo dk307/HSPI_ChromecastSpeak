@@ -40,3 +40,5 @@
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope = "member", Target = "SharpCaster.Models.ChromecastRequests.MediaData.#CustomData")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1304:SpecifyCultureInfo", MessageId = "System.Speech.Synthesis.SpeechSynthesizer.GetInstalledVoices", Scope = "member", Target = "Hspi.ConfigPage.#BuildMainWebPageBody()")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1304:SpecifyCultureInfo", MessageId = "System.Speech.Synthesis.SpeechSynthesizer.GetInstalledVoices", Scope = "member", Target = "Hspi.ConfigPage.#CreateSettingTable()")]
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "hsTraceListener", Scope = "member", Target = "Hspi.HspiBase.#Dispose(System.Boolean)")]
+

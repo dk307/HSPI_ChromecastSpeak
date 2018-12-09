@@ -37,6 +37,15 @@ namespace Hspi
         /// </summary>
         public static string Name => pageName;
 
+        public static string HtmlEncode<T>([AllowNull]T value)
+        {
+            if (value == null)
+            {
+                return string.Empty;
+            }
+            return HttpUtility.HtmlEncode(value);
+        }
+
         /// <summary>
         /// Get the web page string for the configuration page.
         /// </summary>
@@ -56,7 +65,7 @@ namespace Hspi
                 System.Text.StringBuilder stb = new System.Text.StringBuilder();
                 stb.Append(HS.GetPageHeader(Name, "Configuration", string.Empty, string.Empty, false, false));
 
-                stb.Append(PageBuilderAndMenu.clsPageBuilder.DivStart("pluginpage", ""));
+                stb.Append(DivStart("pluginpage", ""));
                 switch (pageType)
                 {
                     case EditDevicePageType:
@@ -68,7 +77,7 @@ namespace Hspi
                     default:
                         stb.Append(BuildMainWebPageBody()); break;
                 }
-                stb.Append(PageBuilderAndMenu.clsPageBuilder.DivEnd());
+                stb.Append(DivEnd());
                 AddBody(stb.ToString());
 
                 AddFooter(HS.GetPageFooter());
@@ -197,7 +206,7 @@ namespace Hspi
 
         protected static string HtmlTextBox(string name, string defaultText, int size = 25, string type = "text", bool @readonly = false)
         {
-            return Invariant($@"<input type='{type}' id='{NameToIdWithPrefix(name)}' size='{size}' name='{name}' value='{defaultText}' {(@readonly ? "readonly" : string.Empty)}>");
+            return Invariant($@"<input type='{type}' id='{NameToIdWithPrefix(name)}' size='{size}' name='{name}' value='{HtmlEncode(defaultText)}' {(@readonly ? "readonly" : string.Empty)}>");
         }
 
         protected string FormCheckBox(string name, string label, bool @checked, bool autoPostBack = false)
@@ -253,7 +262,7 @@ namespace Hspi
 
             StringBuilder stb = new StringBuilder();
 
-            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmDeviceChange", "IdChange", "Post"));
+            stb.Append(FormStart("ftmDeviceChange", "IdChange", "Post"));
 
             stb.Append(@"<div>");
             stb.Append(@"<table class='full_width_table'>");
@@ -291,7 +300,7 @@ namespace Hspi
             stb.Append("<tr height='5'><td colspan=3></td></tr>");
             stb.Append(@"</table>");
             stb.Append(@"</div>");
-            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
+            stb.Append(FormEnd());
 
             return stb.ToString();
         }
@@ -327,12 +336,12 @@ namespace Hspi
             foreach (var device in pluginConfig.Devices)
             {
                 stb.Append(@"<tr>");
-                stb.Append(Invariant($"<td class='tablecell'>{device.Value.Name}</td>"));
-                stb.Append(Invariant($"<td class='tablecell'>{device.Value.DeviceIP}</td>"));
+                stb.Append(Invariant($"<td class='tablecell'>{HtmlEncode(device.Value.Name)}</td>"));
+                stb.Append(Invariant($"<td class='tablecell'>{HtmlEncode(device.Value.DeviceIP)}</td>"));
 
                 string volumeString = device.Value.Volume != null ?
                                         device.Value.Volume.Value.ToString(CultureInfo.InvariantCulture) : "Don't Change";
-                stb.Append(Invariant($"<td class='tablecell'>{volumeString}</td>"));
+                stb.Append(Invariant($"<td class='tablecell'>{HtmlEncode(volumeString)}</td>"));
                 stb.Append(Invariant($"<td class='tablecell'>{PageTypeButton(Invariant($"Edit{device.Key}"), "Edit", EditDevicePageType, deviceId: device.Key)}</td></tr> "));
             }
             stb.Append(Invariant($"<tr><td colspan=4>{PageTypeButton("Add New Device", AddNewName, EditDevicePageType)}</td><td></td></tr>"));
@@ -410,17 +419,16 @@ namespace Hspi
         private const string ImageDivId = "image_id";
         private const string MainPageType = "main";
         private const string NameId = "NameId";
+        private const string NoValueForVoice = "-1";
         private const string PageTypeId = "type";
         private const int PortsMax = 8;
+        private const string SapiVoiceId = "SapiVoiceId";
         private const string SaveDeviceName = "SaveDeviceButton";
         private const string SaveErrorDivId = "message_id";
+        private const string SaveSettingName = "SaveSettings";
         private const string ServerIPAddressId = "ServerIPAddressId";
         private const string ServerPortId = "ServerPortId";
-        private const string SapiVoiceId = "SapiVoiceId";
         private const string VolumeId = "VolumeId";
-        private const string SaveSettingName = "SaveSettings";
-        private const string NoValueForVoice = "-1";
-
         private static readonly string pageName = Invariant($"{PluginData.PlugInName} Configuration").Replace(' ', '_');
         private readonly IHSApplication HS;
         private readonly PluginConfig pluginConfig;
