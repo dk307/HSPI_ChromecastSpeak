@@ -12,7 +12,7 @@ using static System.FormattableString;
 namespace Hspi.Voice
 {
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class VoiceGenerator
+    internal sealed class VoiceGenerator
     {
         public VoiceGenerator(string text, [AllowNull]string sapiVoiceName)
         {

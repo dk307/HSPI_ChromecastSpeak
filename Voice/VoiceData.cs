@@ -4,7 +4,7 @@ using System;
 namespace Hspi.Voice
 {
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class VoiceData
+    internal sealed class VoiceData
     {
         public VoiceData(byte[] data, string extension, TimeSpan? duration)
         {

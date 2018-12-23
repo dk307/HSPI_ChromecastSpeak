@@ -1,4 +1,5 @@
 ﻿using HomeSeerAPI;
+using NullGuard;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -10,16 +11,16 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using Unosquare.Swan;
+using static System.FormattableString;
 
 namespace Hspi
 {
-    using static System.FormattableString;
-
     /// <summary>
     /// Class to store PlugIn Configuration
     /// </summary>
     /// <seealso cref="System.IDisposable" />
-    internal class PluginConfig : IDisposable
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
+    internal sealed class PluginConfig : IDisposable
     {
         public event EventHandler<EventArgs> ConfigChanged;
 
@@ -27,8 +28,7 @@ namespace Hspi
         /// Initializes a new instance of the <see cref="PluginConfig"/> class.
         /// </summary>
         /// <param name="HS">The homeseer application.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults",
-             MessageId = "System.Net.IPAddress.TryParse(System.String,System.Net.IPAddress@)")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults", MessageId = "System.Net.IPAddress.TryParse(System.String,System.Net.IPAddress@)")]
         public PluginConfig(IHSApplication HS)
         {
             this.HS = HS;
@@ -50,10 +50,12 @@ namespace Hspi
                     continue;
                 }
                 string ipAddressString = GetValue(IPAddressKey, string.Empty, deviceId);
-                IPAddress.TryParse(ipAddressString, out var deviceIP);
-                string name = GetValue(NameKey, string.Empty, deviceId);
-                var volume = GetValue<short>(VolumeKey, -1, deviceId);
-                devices.Add(deviceId, new ChromecastDevice(deviceId, name, deviceIP, volume == -1 ? null : (ushort?)volume));
+                if (IPAddress.TryParse(ipAddressString, out var deviceIP))
+                {
+                    string name = GetValue(NameKey, string.Empty, deviceId);
+                    var volume = GetValue<short>(VolumeKey, -1, deviceId);
+                    devices.Add(deviceId, new ChromecastDevice(deviceId, name, deviceIP, volume == -1 ? null : (ushort?)volume));
+                }
             }
             // Auto create entries in INI File
             WebServerPort = this.webServerPort;
@@ -386,22 +388,13 @@ namespace Hspi
 
         #region IDisposable Support
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (!disposedValue)
             {
-                if (disposing)
-                {
-                    configLock.Dispose();
-                }
+                configLock.Dispose();
                 disposedValue = true;
             }
-        }
-
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
-            Dispose(true);
         }
 
         #endregion IDisposable Support

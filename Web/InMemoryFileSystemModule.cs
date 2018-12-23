@@ -19,59 +19,8 @@ namespace Hspi.Web
     /// <summary>
     /// Represents a simple module to server static files from the file system.
     /// </summary>
-    internal class InMemoryFileSystemModule : WebModuleBase
+    internal sealed class InMemoryFileSystemModule : WebModuleBase
     {
-        private const string BrowserTimeFormat = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
-
-        private static CultureInfo StandardHeaderCultureInfo => CultureInfo.CreateSpecificCulture("en-US");
-
-        /// <summary>
-        /// Gets the collection holding the MIME types.
-        /// </summary>
-        /// <value>
-        /// The MIME types.
-        /// </value>
-        public static IReadOnlyDictionary<string, string> MimeTypes
-            => new ReadOnlyDictionary<string, string>(Unosquare.Labs.EmbedIO.Constants.MimeTypes.DefaultMimeTypes);
-
-        /// <summary>
-        /// The default headers
-        /// </summary>
-        public Dictionary<string, string> DefaultHeaders = new Dictionary<string, string>();
-
-        /// <summary>
-        /// Gets the name of this module.
-        /// </summary>
-        /// <value>
-        /// The name.
-        /// </value>
-        public override string Name => "InMemory Files Module";
-
-        /// <summary>
-        /// Private collection holding the contents of the RAM Cache.
-        /// </summary>
-        /// <value>
-        /// The ram cache.
-        /// </value>
-        private MemoryCache RamCache { get; }
-
-        /// <summary>
-        /// Represents a RAM Cache dictionary entry
-        /// </summary>
-        private class RamCacheEntry
-        {
-            public RamCacheEntry(byte[] buffer, DateTimeOffset lastModified, string hash)
-            {
-                this.Buffer = buffer;
-                this.LastModified = lastModified;
-                Hash = hash;
-            }
-
-            public DateTimeOffset LastModified { get; }
-            public byte[] Buffer { get; }
-            public string Hash { get; }
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="InMemoryFileSystemModule" /> class.
         /// </summary>
@@ -91,6 +40,97 @@ namespace Hspi.Web
 
             AddHandler(ModuleMap.AnyPath, HttpVerbs.Head, (context, ct) => HandleGet(context, ct, false));
             AddHandler(ModuleMap.AnyPath, HttpVerbs.Get, (context, ct) => HandleGet(context, ct));
+        }
+
+        /// <summary>
+        /// Gets the collection holding the MIME types.
+        /// </summary>
+        /// <value>
+        /// The MIME types.
+        /// </value>
+        public static IReadOnlyDictionary<string, string> MimeTypes
+            => new ReadOnlyDictionary<string, string>(Unosquare.Labs.EmbedIO.Constants.MimeTypes.DefaultMimeTypes);
+
+        /// <summary>
+        /// Gets the name of this module.
+        /// </summary>
+        /// <value>
+        /// The name.
+        /// </value>
+        public override string Name => "InMemory Files Module";
+
+        private static CultureInfo StandardHeaderCultureInfo => CultureInfo.CreateSpecificCulture("en-US");
+
+        /// <summary>
+        /// Private collection holding the contents of the RAM Cache.
+        /// </summary>
+        /// <value>
+        /// The ram cache.
+        /// </value>
+        private MemoryCache RamCache { get; }
+
+        public void AddCacheFile(byte[] buffer, DateTimeOffset lastModified, string path, DateTimeOffset expiry)
+        {
+            RamCache.Add(path,
+                         new RamCacheEntry(buffer, lastModified, "\"" + Guid.NewGuid().ToString() + "\""),
+                         expiry);
+        }
+
+        private static bool CalculateRange(string partialHeader, long fileSize, out int lowerByteIndex,
+            out int upperByteIndex)
+        {
+            lowerByteIndex = 0;
+            upperByteIndex = 0;
+
+            var range = partialHeader.Replace("bytes=", "").Split('-');
+
+            if (range.Length == 2 && int.TryParse(range[0], out lowerByteIndex) &&
+                int.TryParse(range[1], out upperByteIndex))
+            {
+                return true;
+            }
+
+            if ((range.Length == 2 && int.TryParse(range[0], NumberStyles.Any, CultureInfo.InvariantCulture, out lowerByteIndex) &&
+                 string.IsNullOrWhiteSpace(range[1])) ||
+                (range.Length == 1 && int.TryParse(range[0], NumberStyles.Any, CultureInfo.InvariantCulture, out lowerByteIndex)))
+            {
+                upperByteIndex = (int)fileSize - 1;
+                return true;
+            }
+
+            if (range.Length == 2 && string.IsNullOrWhiteSpace(range[0]) &&
+                int.TryParse(range[1], NumberStyles.Any, CultureInfo.InvariantCulture, out upperByteIndex))
+            {
+                lowerByteIndex = (int)fileSize - upperByteIndex - 1;
+                upperByteIndex = (int)fileSize - 1;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static string GetUrlPath(HttpListenerContext context)
+        {
+            var urlPath = context.RequestPathCaseSensitive().Replace('/', Path.DirectorySeparatorChar);
+            urlPath = urlPath.TrimStart(Path.DirectorySeparatorChar);
+            return urlPath;
+        }
+
+        private static async Task WriteToOutputMemoryStream(HttpListenerContext context, long byteLength, byte[] buffer,
+            int lowerByteIndex, CancellationToken ct)
+        {
+            checked
+            {
+                const int chunkSize = 512 * 1024;
+
+                while (byteLength > 0)
+                {
+                    int length = Math.Min(chunkSize, (int)byteLength);
+                    await context.Response.OutputStream.WriteAsync(buffer, lowerByteIndex, length, ct);
+                    byteLength -= length;
+                    lowerByteIndex += length;
+                }
+            }
         }
 
         private async Task<bool> HandleGet(HttpListenerContext context, CancellationToken ct, bool sendBuffer = true)
@@ -224,23 +264,6 @@ namespace Hspi.Web
             return await context.HtmlResponseAsync(stb.ToString(), cancellationToken: ct).ConfigureAwait(false);
         }
 
-        private static async Task WriteToOutputMemoryStream(HttpListenerContext context, long byteLength, byte[] buffer,
-            int lowerByteIndex, CancellationToken ct)
-        {
-            checked
-            {
-                const int chunkSize = 512 * 1024;
-
-                while (byteLength > 0)
-                {
-                    int length = Math.Min(chunkSize, (int)byteLength);
-                    await context.Response.OutputStream.WriteAsync(buffer, lowerByteIndex, length, ct);
-                    byteLength -= length;
-                    lowerByteIndex += length;
-                }
-            }
-        }
-
         private void SetHeaders(HttpListenerContext context, string localPath, string utcFileDateString)
         {
             var fileExtension = Path.GetExtension(localPath);
@@ -267,53 +290,6 @@ namespace Hspi.Web
             context.Response.AddHeader(Headers.AcceptRanges, "bytes");
         }
 
-        public void AddCacheFile(byte[] buffer, DateTimeOffset lastModified, string path, DateTimeOffset expiry)
-        {
-            RamCache.Add(path,
-                         new RamCacheEntry(buffer, lastModified, "\"" + Guid.NewGuid().ToString() + "\""),
-                         expiry);
-        }
-
-        private static bool CalculateRange(string partialHeader, long fileSize, out int lowerByteIndex,
-            out int upperByteIndex)
-        {
-            lowerByteIndex = 0;
-            upperByteIndex = 0;
-
-            var range = partialHeader.Replace("bytes=", "").Split('-');
-
-            if (range.Length == 2 && int.TryParse(range[0], out lowerByteIndex) &&
-                int.TryParse(range[1], out upperByteIndex))
-            {
-                return true;
-            }
-
-            if ((range.Length == 2 && int.TryParse(range[0], NumberStyles.Any, CultureInfo.InvariantCulture, out lowerByteIndex) &&
-                 string.IsNullOrWhiteSpace(range[1])) ||
-                (range.Length == 1 && int.TryParse(range[0], NumberStyles.Any, CultureInfo.InvariantCulture, out lowerByteIndex)))
-            {
-                upperByteIndex = (int)fileSize - 1;
-                return true;
-            }
-
-            if (range.Length == 2 && string.IsNullOrWhiteSpace(range[0]) &&
-                int.TryParse(range[1], NumberStyles.Any, CultureInfo.InvariantCulture, out upperByteIndex))
-            {
-                lowerByteIndex = (int)fileSize - upperByteIndex - 1;
-                upperByteIndex = (int)fileSize - 1;
-                return true;
-            }
-
-            return false;
-        }
-
-        private static string GetUrlPath(HttpListenerContext context)
-        {
-            var urlPath = context.RequestPathCaseSensitive().Replace('/', Path.DirectorySeparatorChar);
-            urlPath = urlPath.TrimStart(Path.DirectorySeparatorChar);
-            return urlPath;
-        }
-
         private void SetStatusCode304(HttpListenerContext context)
         {
             context.Response.AddHeader(Headers.CacheControl,
@@ -334,5 +310,29 @@ namespace Hspi.Web
             context.Response.ContentType = string.Empty;
             context.Response.StatusCode = 304;
         }
+
+        /// <summary>
+        /// Represents a RAM Cache dictionary entry
+        /// </summary>
+        private class RamCacheEntry
+        {
+            public RamCacheEntry(byte[] buffer, DateTimeOffset lastModified, string hash)
+            {
+                this.Buffer = buffer;
+                this.LastModified = lastModified;
+                Hash = hash;
+            }
+
+            public byte[] Buffer { get; }
+            public string Hash { get; }
+            public DateTimeOffset LastModified { get; }
+        }
+
+        /// <summary>
+        /// The default headers
+        /// </summary>
+        public readonly Dictionary<string, string> DefaultHeaders = new Dictionary<string, string>();
+
+        private const string BrowserTimeFormat = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
     }
 }

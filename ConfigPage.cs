@@ -8,12 +8,11 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Web;
+using System.Speech.Synthesis;
+using static System.FormattableString;
 
 namespace Hspi
 {
-    using System.Speech.Synthesis;
-    using static System.FormattableString;
-
     /// <summary>
     /// Helper class to generate configuration page for plugin
     /// </summary>
@@ -26,7 +25,7 @@ namespace Hspi
         /// </summary>
         /// <param name="HS">The hs.</param>
         /// <param name="pluginConfig">The plugin configuration.</param>
-        public ConfigPage(IHSApplication HS, PluginConfig pluginConfig) : base(pageName)
+        public ConfigPage(IHSApplication HS, PluginConfig pluginConfig) : base(Name)
         {
             this.HS = HS;
             this.pluginConfig = pluginConfig;
@@ -35,7 +34,7 @@ namespace Hspi
         /// <summary>
         /// Gets the name of the web page.
         /// </summary>
-        public static string Name => pageName;
+        public static string Name { get; } = Invariant($"{PluginData.PlugInName} Configuration").Replace(' ', '_');
 
         public static string HtmlEncode<T>([AllowNull]T value)
         {
@@ -429,7 +428,6 @@ namespace Hspi
         private const string ServerIPAddressId = "ServerIPAddressId";
         private const string ServerPortId = "ServerPortId";
         private const string VolumeId = "VolumeId";
-        private static readonly string pageName = Invariant($"{PluginData.PlugInName} Configuration").Replace(' ', '_');
         private readonly IHSApplication HS;
         private readonly PluginConfig pluginConfig;
     }

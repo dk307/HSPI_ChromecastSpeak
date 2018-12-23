@@ -1,11 +1,13 @@
-﻿using System;
+﻿using NullGuard;
+using System;
 using System.Net;
 
 namespace Hspi
 {
-    internal class ChromecastDevice
+    [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
+    internal sealed class ChromecastDevice
     {
-        public ChromecastDevice(string id, string name, IPAddress deviceIP, ushort? volume)
+        public ChromecastDevice(string id, string name, IPAddress deviceIP, [AllowNull]ushort? volume)
         {
             if ((volume.HasValue) && (volume > 100))
             {
