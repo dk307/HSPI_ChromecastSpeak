@@ -5,13 +5,12 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.Web
 {
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class MediaWebServerManager : IDisposable
+    internal sealed class MediaWebServerManager : IDisposable
     {
         public MediaWebServerManager(CancellationToken shutdownCancellationToken)
         {
@@ -23,7 +22,7 @@ namespace Hspi.Web
         public async Task<Uri> Add(byte[] buffer, string extension, TimeSpan? duration)
         {
             // This lock allows us to wait till server has started
-            await webServerLock.WaitAsync(shutdownCancellationToken);
+            await webServerLock.WaitAsync(shutdownCancellationToken).ConfigureAwait(false);
             try
             {
                 if ((webServer == null) || (!webServer.IsListening))
@@ -54,7 +53,15 @@ namespace Hspi.Web
         // This code added to correctly implement the disposable pattern.
         public void Dispose()
         {
-            Dispose(true);
+            if (!disposedValue)
+            {
+                webServerTokenSource?.Dispose();
+                combinedWebServerTokenSource?.Dispose();
+                webServer?.Dispose();
+                webServerLock.Dispose();
+
+                disposedValue = true;
+            }
         }
 
         public async Task StartupServer(IPAddress address, ushort port)
@@ -80,22 +87,6 @@ namespace Hspi.Web
             }
         }
 
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    webServerTokenSource?.Dispose();
-                    combinedWebServerTokenSource?.Dispose();
-                    webServer?.Dispose();
-                    webServerLock.Dispose();
-                }
-
-                disposedValue = true;
-            }
-        }
-
         private async Task StopOldServer()
         {
             try
@@ -110,7 +101,7 @@ namespace Hspi.Web
                 {
                     try
                     {
-                        await webServerTask.WaitForFinishNoCancelException();
+                        await webServerTask.WaitForFinishNoCancelException().ConfigureAwait(false);
                     }
                     catch { }
                 }

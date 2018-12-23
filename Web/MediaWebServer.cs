@@ -5,13 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unosquare.Labs.EmbedIO;
 using Unosquare.Labs.EmbedIO.Constants;
+using static System.FormattableString;
 
 namespace Hspi.Web
 {
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class MediaWebServer : IDisposable
+    internal sealed class MediaWebServer : IDisposable
     {
         public MediaWebServer(IPAddress ipAddress, ushort port)
         {
@@ -22,7 +21,7 @@ namespace Hspi.Web
 
         public async Task StartListening(CancellationToken token)
         {
-            await server.RunAsync(token);
+            await server.RunAsync(token).ConfigureAwait(false);
         }
 
         public void Add(byte[] buffer, DateTimeOffset lastModified, string path, DateTimeOffset expiry)
@@ -40,26 +39,17 @@ namespace Hspi.Web
 
         private bool disposedValue = false; // To detect redundant calls
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (!disposedValue)
             {
-                if (disposing)
+                if (server != null)
                 {
-                    if (server != null)
-                    {
-                        server.Dispose();
-                    }
+                    server.Dispose();
                 }
 
                 disposedValue = true;
             }
-        }
-
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
-            Dispose(true);
         }
 
         #endregion IDisposable Support

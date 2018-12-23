@@ -7,11 +7,10 @@ using System.Speech.Synthesis;
 using System.Threading;
 using System.Threading.Tasks;
 using Hspi.Exceptions;
+using static System.FormattableString;
 
 namespace Hspi.Voice
 {
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal class VoiceGenerator
     {
@@ -25,7 +24,7 @@ namespace Hspi.Voice
         public async Task<VoiceData> GenerateVoiceAsWavFile(CancellationToken token)
         {
             Trace.WriteLine("Starting Generation of Wav using SAPI");
-            var audioFormat = new SpeechAudioFormatInfo(44100, AudioBitsPerSample.Sixteen, AudioChannel.Stereo);
+            var audioFormat = new SpeechAudioFormatInfo(SamplesPerSecond, AudioBitsPerSample.Sixteen, AudioChannel.Stereo);
 
             using (var speechSynthesizer = new SpeechSynthesizer())
             {
@@ -89,6 +88,7 @@ namespace Hspi.Voice
             }
         }
 
+        private const int SamplesPerSecond = 44100;
         private readonly PromptBuilder promptBuilder;
         private readonly string sapiVoiceName;
     }

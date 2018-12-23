@@ -12,11 +12,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unosquare.Labs.EmbedIO;
 using Unosquare.Labs.EmbedIO.Constants;
- 
+using static System.FormattableString;
+
 namespace Hspi.Web
 {
-    using static System.FormattableString;
-
     /// <summary>
     /// Represents a simple module to server static files from the file system.
     /// </summary>
@@ -25,14 +24,14 @@ namespace Hspi.Web
         private const string BrowserTimeFormat = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
 
         private static CultureInfo StandardHeaderCultureInfo => CultureInfo.CreateSpecificCulture("en-US");
- 
+
         /// <summary>
         /// Gets the collection holding the MIME types.
         /// </summary>
         /// <value>
         /// The MIME types.
         /// </value>
-        public static IReadOnlyDictionary<string, string> MimeTypes 
+        public static IReadOnlyDictionary<string, string> MimeTypes
             => new ReadOnlyDictionary<string, string>(Unosquare.Labs.EmbedIO.Constants.MimeTypes.DefaultMimeTypes);
 
         /// <summary>

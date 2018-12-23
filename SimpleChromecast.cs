@@ -9,16 +9,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.Chromecast
 {
-    using static System.FormattableString;
-
     /// <summary>
     /// Class to play  Url on Chromecast Device
     /// </summary>
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class SimpleChromecast
+    internal sealed class SimpleChromecast
     {
         public SimpleChromecast(ChromecastDevice device, Uri playUri, TimeSpan? duration, double? volume)
         {
@@ -86,50 +85,29 @@ namespace Hspi.Chromecast
             }
         }
 
-        private void MediaChannel_MessageReceived(object sender, [AllowNull]MediaStatus mediaStatus)
+        private static ChromecastApplication GetDefaultApplication(ChromecastStatus status)
         {
-            if (loadedMediaStatus != null)
-            {
-                if (mediaStatus != null)
-                {
-                    if ((mediaStatus.PlayerState == PlayerState.Idle) &&
-                        (mediaStatus.MediaSessionId == loadedMediaStatus.MediaSessionId))
-                    {
-                        switch (mediaStatus.IdleReason)
-                        {
-                            case IdleReason.CANCELLED:
-                            case IdleReason.ERROR:
-                            case IdleReason.INTERRUPTED:
-                                playbackFinished.SetException(new MediaLoadException(device.DeviceIP.ToString(),
-                                                                                     mediaStatus.IdleReason.ToString()));
-                                break;
+            return status?.Applications?.FirstOrDefault((app) => { return app.AppId == defaultAppId; });
+        }
 
-                            case IdleReason.FINISHED:
-                                playbackFinished.SetResult(true);
-                                break;
-                        }
-                    }
-                }
+        private void Client_ConnectedChanged(object sender, bool connected)
+        {
+            if (connected)
+            {
+                connectedSource.SetResult(true);
             }
         }
 
-        private async Task<MediaStatus> LoadMedia(ChromeCastClient client, ChromecastApplication defaultApplication,
-                                                  CancellationToken cancellationToken)
+        private async Task Connect(ChromeCastClient client, CancellationToken cancellationToken)
         {
-            Trace.WriteLine(Invariant($"Loading Media [{playUri}] in on Chromecast {device.Name}"));
+            Trace.WriteLine(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
+            connectedSource = new TaskCompletionSource<bool>(cancellationToken);
+            client.ConnectedChanged += Client_ConnectedChanged;
+            await client.ConnectChromecast(cancellationToken).ConfigureAwait(false);
+            await connectedSource.Task.WaitOnRequestCompletion(cancellationToken).ConfigureAwait(false);
+            client.ConnectedChanged -= Client_ConnectedChanged;
 
-            var metadata = new GenericMediaMetadata()
-            {
-                title = "Homeseer",
-                metadataType = SharpCaster.Models.Enums.MetadataType.GENERIC,
-            };
-
-            var mediaStatus = await client.MediaChannel.LoadMedia(defaultApplication, playUri, null, cancellationToken,
-                                                metadata: metadata,
-                                                duration: duration.HasValue ? duration.Value.TotalSeconds : 0D).ConfigureAwait(false);
-
-            Trace.WriteLine(Invariant($"Loaded Media [{playUri}] in on Chromecast {device.Name}"));
-            return mediaStatus;
+            Trace.WriteLine(Invariant($"Connected to Chromecast {device.Name} on {device.DeviceIP}"));
         }
 
         private async Task<ChromecastStatus> LaunchApplication(ChromeCastClient client, CancellationToken cancellationToken)
@@ -160,40 +138,59 @@ namespace Hspi.Chromecast
             return status;
         }
 
-        private static ChromecastApplication GetDefaultApplication(ChromecastStatus status)
+        private async Task<MediaStatus> LoadMedia(ChromeCastClient client, ChromecastApplication defaultApplication,
+                                                  CancellationToken cancellationToken)
         {
-            return status?.Applications?.FirstOrDefault((app) => { return app.AppId == defaultAppId; });
-        }
+            Trace.WriteLine(Invariant($"Loading Media [{playUri}] in on Chromecast {device.Name}"));
 
-        private async Task Connect(ChromeCastClient client, CancellationToken cancellationToken)
-        {
-            Trace.WriteLine(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
-            connectedSource = new TaskCompletionSource<bool>(cancellationToken);
-            client.ConnectedChanged += Client_ConnectedChanged;
-            await client.ConnectChromecast(cancellationToken).ConfigureAwait(false);
-            await connectedSource.Task.WaitOnRequestCompletion(cancellationToken).ConfigureAwait(false);
-            client.ConnectedChanged -= Client_ConnectedChanged;
-
-            Trace.WriteLine(Invariant($"Connected to Chromecast {device.Name} on {device.DeviceIP}"));
-        }
-
-        private void Client_ConnectedChanged(object sender, bool connected)
-        {
-            if (connected)
+            var metadata = new GenericMediaMetadata()
             {
-                connectedSource.SetResult(true);
+                title = "Homeseer",
+                metadataType = SharpCaster.Models.Enums.MetadataType.GENERIC,
+            };
+
+            var mediaStatus = await client.MediaChannel.LoadMedia(defaultApplication, playUri, null, cancellationToken,
+                                                metadata: metadata,
+                                                duration: duration.HasValue ? duration.Value.TotalSeconds : 0D).ConfigureAwait(false);
+
+            Trace.WriteLine(Invariant($"Loaded Media [{playUri}] in on Chromecast {device.Name}"));
+            return mediaStatus;
+        }
+
+        private void MediaChannel_MessageReceived(object sender, [AllowNull]MediaStatus mediaStatus)
+        {
+            if (loadedMediaStatus != null)
+            {
+                if (mediaStatus != null)
+                {
+                    if ((mediaStatus.PlayerState == PlayerState.Idle) &&
+                        (mediaStatus.MediaSessionId == loadedMediaStatus.MediaSessionId))
+                    {
+                        switch (mediaStatus.IdleReason)
+                        {
+                            case IdleReason.CANCELLED:
+                            case IdleReason.ERROR:
+                            case IdleReason.INTERRUPTED:
+                                playbackFinished.SetException(new MediaLoadException(device.DeviceIP.ToString(),
+                                                                                     mediaStatus.IdleReason.ToString()));
+                                break;
+
+                            case IdleReason.FINISHED:
+                                playbackFinished.SetResult(true);
+                                break;
+                        }
+                    }
+                }
             }
         }
 
-        private TaskCompletionSource<bool> playbackFinished = new TaskCompletionSource<bool>();
-
-        private MediaStatus loadedMediaStatus;
         private const string defaultAppId = "CC1AD845";
         private readonly ChromecastDevice device;
-        private readonly Uri playUri;
         private readonly TimeSpan? duration;
+        private readonly Uri playUri;
         private readonly double? volume;
-
         private TaskCompletionSource<bool> connectedSource;
+        private MediaStatus loadedMediaStatus;
+        private TaskCompletionSource<bool> playbackFinished = new TaskCompletionSource<bool>();
     };
 }

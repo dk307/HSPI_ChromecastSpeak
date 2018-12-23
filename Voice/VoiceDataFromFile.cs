@@ -4,11 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi.Voice
 {
-    using static System.FormattableString;
-
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal static class VoiceDataFromFile
     {
