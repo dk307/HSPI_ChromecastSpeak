@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Text;
+using static System.FormattableString;
 
-namespace Hspi
+namespace Hspi.Utils
 {
-    using static System.FormattableString;
-
     internal static class ExceptionHelper
     {
         public static string GetFullMessage(this Exception ex)

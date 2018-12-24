@@ -108,8 +108,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ChromecastDevice.cs" />
-    <Compile Include="ConfigPage.cs" />
-    <Compile Include="ExceptionHelper.cs" />
+    <Compile Include="Pages\ConfigPage.cs" />
+    <Compile Include="Pages\PageHelper.cs" />
+    <Compile Include="Utils\ExceptionHelper.cs" />
     <Compile Include="Exceptions\VoiceGenerationException.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />
@@ -176,6 +177,7 @@
     <Compile Include="SharpCaster\Services\ChromecastTcpClient.cs" />
     <Compile Include="SimpleChromecast.cs" />
     <Compile Include="TaskHelper.cs" />
+    <Compile Include="Utils\ObjectSerialize.cs" />
     <Compile Include="Voice\VoiceData.cs" />
     <Compile Include="Voice\VoiceDataFromFile.cs" />
     <Compile Include="Voice\VoiceGenerator.cs" />

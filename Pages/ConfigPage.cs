@@ -11,39 +11,28 @@ using System.Web;
 using System.Speech.Synthesis;
 using static System.FormattableString;
 
-namespace Hspi
+namespace Hspi.Pages
 {
     /// <summary>
     /// Helper class to generate configuration page for plugin
     /// </summary>
     /// <seealso cref="Scheduler.PageBuilderAndMenu.clsPageBuilder" />
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class ConfigPage : PageBuilderAndMenu.clsPageBuilder
+    internal class ConfigPage : PageHelper
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ConfigPage" /> class.
         /// </summary>
         /// <param name="HS">The hs.</param>
         /// <param name="pluginConfig">The plugin configuration.</param>
-        public ConfigPage(IHSApplication HS, PluginConfig pluginConfig) : base(Name)
+        public ConfigPage(IHSApplication HS, PluginConfig pluginConfig) : base(HS, pluginConfig, Name)
         {
-            this.HS = HS;
-            this.pluginConfig = pluginConfig;
         }
 
         /// <summary>
         /// Gets the name of the web page.
         /// </summary>
         public static string Name { get; } = Invariant($"{PluginData.PlugInName} Configuration").Replace(' ', '_');
-
-        public static string HtmlEncode<T>([AllowNull]T value)
-        {
-            if (value == null)
-            {
-                return string.Empty;
-            }
-            return HttpUtility.HtmlEncode(value);
-        }
 
         /// <summary>
         /// Get the web page string for the configuration page.
@@ -203,53 +192,6 @@ namespace Hspi
             return base.postBackProc(Name, data, user, userRights);
         }
 
-        protected static string HtmlTextBox(string name, string defaultText, int size = 25, string type = "text", bool @readonly = false)
-        {
-            return Invariant($@"<input type='{type}' id='{NameToIdWithPrefix(name)}' size='{size}' name='{name}' value='{HtmlEncode(defaultText)}' {(@readonly ? "readonly" : string.Empty)}>");
-        }
-
-        protected string FormCheckBox(string name, string label, bool @checked, bool autoPostBack = false)
-        {
-            var cb = new clsJQuery.jqCheckBox(name, label, PageName, true, true)
-            {
-                id = NameToIdWithPrefix(name),
-                @checked = @checked,
-                autoPostBack = autoPostBack,
-            };
-            return cb.Build();
-        }
-
-        protected string FormPageButton(string name, string label)
-        {
-            var b = new clsJQuery.jqButton(name, label, PageName, true)
-            {
-                id = NameToIdWithPrefix(name),
-            };
-
-            return b.Build();
-        }
-
-        protected string PageTypeButton(string name, string label, string pageType, string deviceId = null)
-        {
-            var b = new clsJQuery.jqButton(name, label, PageName, false)
-            {
-                id = NameToIdWithPrefix(name),
-                url = Invariant($@"/{HttpUtility.UrlEncode(ConfigPage.Name)}?{PageTypeId}={HttpUtility.UrlEncode(pageType)}&{DeviceIdId}={HttpUtility.UrlEncode(deviceId ?? string.Empty)}"),
-            };
-
-            return b.Build();
-        }
-
-        private static string NameToId(string name)
-        {
-            return name.Replace(' ', '_');
-        }
-
-        private static string NameToIdWithPrefix(string name)
-        {
-            return Invariant($"{IdPrefix}{NameToId(name)}");
-        }
-
         private string BuildAddNewWebPageBody([AllowNull]ChromecastDevice device)
         {
             string name = device != null ? device.Name.ToString() : string.Empty;
@@ -345,7 +287,7 @@ namespace Hspi
             }
             stb.Append(Invariant($"<tr><td colspan=4>{PageTypeButton("Add New Device", AddNewName, EditDevicePageType)}</td><td></td></tr>"));
             stb.Append("<tr height='5'><td colspan=4></td></tr>");
-            stb.Append(Invariant($"<tr><td colspan=4></td></tr>"));
+            stb.Append("<tr><td colspan=4></td></tr>");
             stb.Append(@"<tr height='5'><td colspan=4></td></tr>");
             stb.Append(@" </table>");
 
@@ -357,7 +299,7 @@ namespace Hspi
         {
             StringBuilder stb = new StringBuilder();
 
-            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormStart("ftmSettings", "Id", "Post"));
+            stb.Append(FormStart("ftmSettings", "Id", "Post"));
             stb.Append(@"<table class='full_width_table'>");
             stb.Append("<tr height='2'><td width=25%></td><td></td></tr>");
             stb.Append("<tr><td class='tableheader' colspan=2>Settings</td></tr>");
@@ -402,7 +344,7 @@ namespace Hspi
 
             stb.Append(@"<tr height='5'><td colspan=2></td></tr>");
             stb.Append(@"</table>");
-            stb.Append(PageBuilderAndMenu.clsPageBuilder.FormEnd());
+            stb.Append(FormEnd());
             return stb.ToString();
         }
 
@@ -410,17 +352,13 @@ namespace Hspi
         private const string CancelDeviceName = "CancelDeviceName";
         private const string DebugLoggingId = "DebugLoggingId";
         private const string DeleteDeviceName = "DeleteDeviceName";
-        private const string DeviceIdId = "DeviceIdId";
         private const string DeviceIPId = "DeviceIPId";
         private const string EditDevicePageType = "addNew";
         private const string FormatSpeechId = "FormatSpeechId";
-        private const string IdPrefix = "id_";
         private const string ImageDivId = "image_id";
         private const string MainPageType = "main";
         private const string NameId = "NameId";
         private const string NoValueForVoice = "-1";
-        private const string PageTypeId = "type";
-        private const int PortsMax = 8;
         private const string SapiVoiceId = "SapiVoiceId";
         private const string SaveDeviceName = "SaveDeviceButton";
         private const string SaveErrorDivId = "message_id";
@@ -428,7 +366,5 @@ namespace Hspi
         private const string ServerIPAddressId = "ServerIPAddressId";
         private const string ServerPortId = "ServerPortId";
         private const string VolumeId = "VolumeId";
-        private readonly IHSApplication HS;
-        private readonly PluginConfig pluginConfig;
     }
 }

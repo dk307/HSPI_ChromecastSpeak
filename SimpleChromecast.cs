@@ -4,6 +4,7 @@ using SharpCaster.Exceptions;
 using SharpCaster.Models.ChromecastStatus;
 using SharpCaster.Models.MediaStatus;
 using SharpCaster.Models.Metadata;
+using SharpCaster.Channels;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -19,11 +20,18 @@ namespace Hspi.Chromecast
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
     internal sealed class SimpleChromecast
     {
-        public SimpleChromecast(ChromecastDevice device, Uri playUri, TimeSpan? duration, double? volume)
+        public SimpleChromecast(ChromecastDevice device,
+                                Uri playUri,
+                                string contentType = null,
+                                bool live = false,
+                                [AllowNull]TimeSpan? duration = null,
+                                [AllowNull]double? volume = null)
         {
             this.volume = volume;
             this.duration = duration;
             this.playUri = playUri;
+            this.contentType = contentType;
+            this.live = live;
             this.device = device;
         }
 
@@ -116,15 +124,8 @@ namespace Hspi.Chromecast
             ChromecastStatus status = await client.ReceiverChannel.GetChromecastStatus(cancellationToken).ConfigureAwait(false);
 
             var defaultApplication = GetDefaultApplication(status);
-            //if (defaultApplication == null)
-            //{
             status = await client.ReceiverChannel.LaunchApplication(defaultAppId, cancellationToken).ConfigureAwait(false);
             defaultApplication = GetDefaultApplication(status);
-            //}
-            //else
-            //{
-            //    Trace.WriteLine(Invariant($"Default app is already running on Chromecast {device.Name}"));
-            //}
 
             if (defaultApplication == null)
             {
@@ -149,7 +150,8 @@ namespace Hspi.Chromecast
                 metadataType = SharpCaster.Models.Enums.MetadataType.GENERIC,
             };
 
-            var mediaStatus = await client.MediaChannel.LoadMedia(defaultApplication, playUri, null, cancellationToken,
+            var mediaStatus = await client.MediaChannel.LoadMedia(defaultApplication, playUri, contentType, cancellationToken,
+                                                streamType: live ? MediaChannel.StreamTypeLive : MediaChannel.StreamTypeBuffered,
                                                 metadata: metadata,
                                                 duration: duration.HasValue ? duration.Value.TotalSeconds : 0D).ConfigureAwait(false);
 
@@ -188,6 +190,8 @@ namespace Hspi.Chromecast
         private readonly ChromecastDevice device;
         private readonly TimeSpan? duration;
         private readonly Uri playUri;
+        private readonly string contentType;
+        private readonly bool live;
         private readonly double? volume;
         private TaskCompletionSource<bool> connectedSource;
         private MediaStatus loadedMediaStatus;

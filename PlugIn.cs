@@ -1,6 +1,8 @@
 ﻿using HomeSeerAPI;
 using Hspi.Chromecast;
 using Hspi.Exceptions;
+using Hspi.Pages;
+using Hspi.Utils;
 using Hspi.Voice;
 using Hspi.Web;
 using NullGuard;
@@ -9,11 +11,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.FormattableString;
 
 namespace Hspi
 {
-    using static System.FormattableString;
-
     /// <summary>
     /// Plugin class for Chromecast Speak
     /// </summary>
@@ -42,7 +43,7 @@ namespace Hspi
 
                 Task.Factory.StartNew(() => StartWebServer());
 
-                RegisterConfigPage();
+                RegisterPages();
 
                 Callback.RegisterProxySpeakPlug(PluginData.PlugInName, string.Empty);
 
@@ -78,7 +79,7 @@ namespace Hspi
 
         public override void LogDebug(string message)
         {
-            if ((pluginConfig!= null) && pluginConfig.DebugLogging)
+            if ((pluginConfig != null) && pluginConfig.DebugLogging)
             {
                 base.LogDebug(message);
             }
@@ -200,7 +201,7 @@ namespace Hspi
                 List<Task> playTasks = new List<Task>();
                 foreach (var device in devices)
                 {
-                    SimpleChromecast chromecast = new SimpleChromecast(device, uri, voiceData.Duration, device.Volume);
+                    SimpleChromecast chromecast = new SimpleChromecast(device, uri, duration: voiceData.Duration, volume: device.Volume);
                     playTasks.Add(chromecast.Play(combinedStopTokenSource.Token));
                 }
 
@@ -238,15 +239,15 @@ namespace Hspi
             }
         }
 
-        private void RegisterConfigPage()
+        private void RegisterPages()
         {
-            string link = ConfigPage.Name;
-            HS.RegisterPage(link, Name, string.Empty);
+            string configLink = ConfigPage.Name;
+            HS.RegisterPage(configLink, Name, string.Empty);
 
             HomeSeerAPI.WebPageDesc wpd = new HomeSeerAPI.WebPageDesc()
             {
                 plugInName = Name,
-                link = link,
+                link = configLink,
                 linktext = "Configuration",
                 page_title = Invariant($"{PluginData.PlugInName} Configuration"),
             };

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Hspi.Exceptions;
 using static System.FormattableString;
+using Hspi.Utils;
 
 namespace Hspi.Voice
 {

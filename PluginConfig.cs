@@ -300,12 +300,12 @@ namespace Hspi
             return ipAddresses.First();
         }
 
-        private T GetValue<T>(string key, T defaultValue)
+        private T GetValue<T>(string key, [AllowNull]T defaultValue)
         {
             return GetValue(key, defaultValue, DefaultSection);
         }
 
-        private T GetValue<T>(string key, T defaultValue, string section)
+        private T GetValue<T>(string key, [AllowNull]T defaultValue, string section)
         {
             string stringValue = HS.GetINISetting(section, key, null, FileName);
             if (stringValue != null)
@@ -323,12 +323,12 @@ namespace Hspi
             return defaultValue;
         }
 
-        private void SetValue<T>(string key, T value)
+        private void SetValue<T>(string key, [AllowNull]T value)
         {
             SetValue<T>(key, value, DefaultSection);
         }
 
-        private void SetValue<T>(string key, T value, string section)
+        private void SetValue<T>(string key, [AllowNull]T value, string section)
         {
             string stringValue = System.Convert.ToString(value, CultureInfo.InvariantCulture);
             HS.SaveINISetting(section, key, stringValue, FileName);
