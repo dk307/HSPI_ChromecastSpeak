@@ -3,6 +3,7 @@ using NullGuard;
 using Scheduler;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -73,6 +74,39 @@ namespace Hspi.Pages
             };
 
             return b.Build();
+        }
+
+        protected string FormDropDown(string name, NameValueCollection options, string selected,
+                              int width, string tooltip, bool autoPostBack = true)
+        {
+            return FormDropDown(name, options, selected,
+                                      width, tooltip, autoPostBack, PageName);
+        }
+
+        protected string FormDropDown(string name, NameValueCollection options, string selected,
+                                      int width, string tooltip, bool autoPostBack, string pageName)
+        {
+            var dropdown = new clsJQuery.jqDropList(name, pageName, false)
+            {
+                selectedItemIndex = -1,
+                id = NameToIdWithPrefix(name),
+                autoPostBack = autoPostBack,
+                toolTip = tooltip,
+                style = Invariant($"width: {width}px;"),
+                enabled = true,
+                submitForm = autoPostBack,
+            };
+
+            if (options != null)
+            {
+                for (var i = 0; i < options.Count; i++)
+                {
+                    var sel = options.GetKey(i) == selected;
+                    dropdown.AddItem(options.Get(i), options.GetKey(i), sel);
+                }
+            }
+
+            return dropdown.Build();
         }
 
         protected const string DeviceIdId = "DeviceIdId";

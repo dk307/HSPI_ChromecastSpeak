@@ -81,6 +81,7 @@
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>Rules.ruleset</CodeAnalysisRuleSet>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -108,8 +109,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ChromecastDevice.cs" />
+    <Compile Include="Pages\ActionPage.cs" />
+    <Compile Include="Pages\ChromecastCastAction.cs" />
     <Compile Include="Pages\ConfigPage.cs" />
     <Compile Include="Pages\PageHelper.cs" />
+    <Compile Include="Utils\EnumUtil.cs" />
     <Compile Include="Utils\ExceptionHelper.cs" />
     <Compile Include="Exceptions\VoiceGenerationException.cs" />
     <Compile Include="GlobalSuppressions.cs" />

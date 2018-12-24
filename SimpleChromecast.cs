@@ -35,7 +35,7 @@ namespace Hspi.Chromecast
             this.device = device;
         }
 
-        public async Task Play(CancellationToken cancellationToken)
+        public async Task Play(bool waitforCompletion, CancellationToken cancellationToken)
         {
             if (!Uri.TryCreate(Invariant($"https://{device.DeviceIP}/"), UriKind.Absolute, out Uri deviceUri))
             {
@@ -72,21 +72,23 @@ namespace Hspi.Chromecast
                 {
                     throw new MediaLoadException(device.DeviceIP.ToString(), "Failed to load");
                 }
-
-                await playbackFinished.Task.WaitOnRequestCompletion(cancellationToken).ConfigureAwait(false);
-
-                client.MediaChannel.MessageReceived -= MediaChannel_MessageReceived;
-
-                // Restore the existing volume
-                if (resetVolumeBack)
+                if (waitforCompletion)
                 {
-                    Trace.WriteLine(Invariant($"Restoring Volume on Chromecast {device.Name}"));
-                    await client.ReceiverChannel.SetVolume(currentVolume.Level, currentVolume.Muted, cancellationToken)
-                                                .ConfigureAwait(false);
-                    Trace.WriteLine(Invariant($"Finished Restoring Volume on Chromecast {device.Name}"));
+                    await playbackFinished.Task.WaitOnRequestCompletion(cancellationToken).ConfigureAwait(false);
+
+                    Trace.TraceInformation(Invariant($"Finished Playing Media on Chromecast {device.Name}"));
+                    client.MediaChannel.MessageReceived -= MediaChannel_MessageReceived;
+
+                    // Restore the existing volume
+                    if (resetVolumeBack)
+                    {
+                        Trace.WriteLine(Invariant($"Restoring Volume on Chromecast {device.Name}"));
+                        await client.ReceiverChannel.SetVolume(currentVolume.Level, currentVolume.Muted, cancellationToken)
+                                                    .ConfigureAwait(false);
+                        Trace.WriteLine(Invariant($"Finished Restoring Volume on Chromecast {device.Name}"));
+                    }
                 }
 
-                Trace.TraceInformation(Invariant($"Played Speech on Chromecast {device.Name}"));
                 Trace.WriteLine(Invariant($"Disconnecting Chromecast {device.Name}"));
                 await client.Disconnect(cancellationToken).ConfigureAwait(false);
                 Trace.WriteLine(Invariant($"Disconnected Chromecast {device.Name}"));
