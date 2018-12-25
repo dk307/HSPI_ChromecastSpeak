@@ -53,7 +53,7 @@ namespace Hspi.Pages
                 System.Text.StringBuilder stb = new System.Text.StringBuilder();
                 stb.Append(HS.GetPageHeader(Name, "Configuration", string.Empty, string.Empty, false, false));
 
-                stb.Append(DivStart("pluginpage", ""));
+                stb.Append(DivStart("pluginpage", string.Empty));
                 switch (pageType)
                 {
                     case EditDevicePageType:
@@ -63,7 +63,8 @@ namespace Hspi.Pages
                     case MainPageType:
                     case null:
                     default:
-                        stb.Append(BuildMainWebPageBody()); break;
+                        stb.Append(BuildMainWebPageBody());
+                        break;
                 }
                 stb.Append(DivEnd());
                 AddBody(stb.ToString());
@@ -295,6 +296,7 @@ namespace Hspi.Pages
             return stb.ToString();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1304:SpecifyCultureInfo", MessageId = "System.Speech.Synthesis.SpeechSynthesizer.GetInstalledVoices")]
         private string CreateSettingTable()
         {
             StringBuilder stb = new StringBuilder();

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Nito.AsyncEx;
+using Nito.AsyncEx.Synchronous;
 
 namespace SharpCaster.Channels
 {
@@ -19,47 +21,38 @@ namespace SharpCaster.Channels
 
         private async Task AbortAsync()
         {
-            await completedListLock.WaitAsync();
-            aborted = true;
-            try
+            using (var sync = await completedListLock.LockAsync().ConfigureAwait(false))
             {
+                aborted = true;
                 foreach (var pair in completedList)
                 {
                     pair.Value.SetException(new ChromecastDeviceException(Client.DeviceUri.ToString(), "Device got disconnected."));
                 }
                 completedList.Clear();
             }
-            finally
-            {
-                completedListLock.Release();
-            }
         }
 
         protected async Task<TaskCompletionSource<T>> AddRequestTracking(int requestId, CancellationToken token)
         {
-            await completedListLock.WaitAsync(token).ConfigureAwait(false);
-            TaskCompletionSource<T> requestTracking = new TaskCompletionSource<T>();
-            try
+            using (var sync = await completedListLock.LockAsync(token).ConfigureAwait(false))
             {
-                if (aborted)
+                TaskCompletionSource<T> requestTracking = new TaskCompletionSource<T>();
                 {
-                    throw new ChromecastDeviceException(Client.DeviceUri.ToString(), "Device got disconnected.");
-                }
+                    if (aborted)
+                    {
+                        throw new ChromecastDeviceException(Client.DeviceUri.ToString(), "Device got disconnected.");
+                    }
 
-                completedList[requestId] = requestTracking;
-                return requestTracking;
-            }
-            finally
-            {
-                completedListLock.Release();
+                    completedList[requestId] = requestTracking;
+                    return requestTracking;
+                }
             }
         }
 
         protected bool TryRemoveRequestTracking(int requestId, out TaskCompletionSource<T> completionSource)
         {
             completionSource = null;
-            completedListLock.Wait();
-            try
+            using (var sync = completedListLock.Lock())
             {
                 if (completedList.TryGetValue(requestId, out completionSource))
                 {
@@ -68,24 +61,10 @@ namespace SharpCaster.Channels
                 }
                 return false;
             }
-            finally
-            {
-                completedListLock.Release();
-            }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                completedListLock.Dispose();
-            }
-
-            base.Dispose(disposing);
         }
 
         private bool aborted = false;
-        private readonly SemaphoreSlim completedListLock = new SemaphoreSlim(1);
+        private readonly AsyncLock completedListLock = new AsyncLock();
 
         private readonly IDictionary<int, TaskCompletionSource<T>> completedList =
                         new Dictionary<int, TaskCompletionSource<T>>();

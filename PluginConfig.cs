@@ -1,15 +1,15 @@
 ﻿using HomeSeerAPI;
+using Nito.AsyncEx;
 using NullGuard;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Threading;
 using Unosquare.Swan;
 using static System.FormattableString;
 
@@ -20,7 +20,7 @@ namespace Hspi
     /// </summary>
     /// <seealso cref="System.IDisposable" />
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal sealed class PluginConfig : IDisposable
+    internal sealed class PluginConfig
     {
         public event EventHandler<EventArgs> ConfigChanged;
 
@@ -67,18 +67,13 @@ namespace Hspi
         /// <value>
         /// The API key.
         /// </value>
-        public IReadOnlyDictionary<string, ChromecastDevice> Devices
+        public ImmutableDictionary<string, ChromecastDevice> Devices
         {
             get
             {
-                configLock.EnterReadLock();
-                try
+                using (var sync = configLock.ReaderLock())
                 {
-                    return new Dictionary<string, ChromecastDevice>(devices);
-                }
-                finally
-                {
-                    configLock.ExitReadLock();
+                    return devices.ToImmutableDictionary();
                 }
             }
         }
@@ -93,27 +88,17 @@ namespace Hspi
         {
             get
             {
-                configLock.EnterReadLock();
-                try
+                using (var sync = configLock.ReaderLock())
                 {
                     return debugLogging;
-                }
-                finally
-                {
-                    configLock.ExitReadLock();
                 }
             }
             set
             {
-                configLock.EnterWriteLock();
-                try
+                using (var sync = configLock.WriterLock())
                 {
                     SetValue(DebugLoggingKey, value);
                     debugLogging = value;
-                }
-                finally
-                {
-                    configLock.ExitWriteLock();
                 }
             }
         }
@@ -122,27 +107,17 @@ namespace Hspi
         {
             get
             {
-                configLock.EnterReadLock();
-                try
+                using (var sync = configLock.ReaderLock())
                 {
                     return forwardSpeech;
-                }
-                finally
-                {
-                    configLock.ExitReadLock();
                 }
             }
             set
             {
-                configLock.EnterWriteLock();
-                try
+                using (var sync = configLock.WriterLock())
                 {
                     SetValue(ForwardSpeechKey, value);
                     forwardSpeech = value;
-                }
-                finally
-                {
-                    configLock.ExitWriteLock();
                 }
             }
         }
@@ -151,27 +126,17 @@ namespace Hspi
         {
             get
             {
-                configLock.EnterReadLock();
-                try
+                using (var sync = configLock.ReaderLock())
                 {
                     return sapiVoice;
-                }
-                finally
-                {
-                    configLock.ExitReadLock();
                 }
             }
             set
             {
-                configLock.EnterWriteLock();
-                try
+                using (var sync = configLock.WriterLock())
                 {
                     SetValue(SapiVoiceKey, value);
                     sapiVoice = value;
-                }
-                finally
-                {
-                    configLock.ExitWriteLock();
                 }
             }
         }
@@ -180,27 +145,17 @@ namespace Hspi
         {
             get
             {
-                configLock.EnterReadLock();
-                try
+                using (var sync = configLock.ReaderLock())
                 {
                     return webServerPort;
-                }
-                finally
-                {
-                    configLock.ExitReadLock();
                 }
             }
             set
             {
-                configLock.EnterWriteLock();
-                try
+                using (var sync = configLock.WriterLock())
                 {
                     SetValue(WebServerPortKey, value);
                     webServerPort = value;
-                }
-                finally
-                {
-                    configLock.ExitWriteLock();
                 }
             }
         }
@@ -209,36 +164,25 @@ namespace Hspi
         {
             get
             {
-                configLock.EnterReadLock();
-                try
+                using (var sync = configLock.ReaderLock())
                 {
                     return webServerIPAddress;
-                }
-                finally
-                {
-                    configLock.ExitReadLock();
                 }
             }
 
             set
             {
-                configLock.EnterWriteLock();
-                try
+                using (var sync = configLock.WriterLock())
                 {
                     SetValue(WebServerIPAddressKey, value);
                     webServerIPAddress = value;
-                }
-                finally
-                {
-                    configLock.ExitWriteLock();
                 }
             }
         }
 
         public void AddDevice(ChromecastDevice device)
         {
-            configLock.EnterWriteLock();
-            try
+            using (var sync = configLock.WriterLock())
             {
                 devices[device.Id] = device;
                 SetValue(NameKey, device.Name, device.Id);
@@ -246,16 +190,11 @@ namespace Hspi
                 SetValue(VolumeKey, device.Volume, device.Id);
                 SetValue(DeviceIds, devices.Keys.Aggregate((x, y) => x + DeviceIdsSeparator + y));
             }
-            finally
-            {
-                configLock.ExitWriteLock();
-            }
         }
 
         public void RemoveDevice(string deviceId)
         {
-            configLock.EnterWriteLock();
-            try
+            using (var sync = configLock.WriterLock())
             {
                 devices.Remove(deviceId);
                 if (devices.Count > 0)
@@ -267,10 +206,6 @@ namespace Hspi
                     SetValue(DeviceIds, string.Empty);
                 }
                 HS.ClearINISection(deviceId, FileName);
-            }
-            finally
-            {
-                configLock.ExitWriteLock();
             }
         }
 
@@ -386,19 +321,6 @@ namespace Hspi
             return addressList.ToArray();
         }
 
-        #region IDisposable Support
-
-        public void Dispose()
-        {
-            if (!disposedValue)
-            {
-                configLock.Dispose();
-                disposedValue = true;
-            }
-        }
-
-        #endregion IDisposable Support
-
         private const string NameKey = "Name";
         private const string DeviceIds = "DevicesIds";
         private const string WebServerIPAddressKey = "WebServerIPAddress";
@@ -418,8 +340,7 @@ namespace Hspi
         private bool debugLogging;
         private bool forwardSpeech;
         private string sapiVoice;
-        private bool disposedValue = false;
-        private readonly ReaderWriterLockSlim configLock = new ReaderWriterLockSlim();
+        private readonly AsyncReaderWriterLock configLock = new AsyncReaderWriterLock();
         private IPAddress webServerIPAddress;
     };
 }

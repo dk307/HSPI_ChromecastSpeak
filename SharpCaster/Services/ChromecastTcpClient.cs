@@ -43,10 +43,14 @@ namespace SharpCaster.Services
                 cancellationToken.ThrowIfCancellationRequested();
             }
             else
+            {
                 canceller.Dispose();
+            }
 
             if (okOrCancelled.IsFaulted)
+            {
                 throw okOrCancelled.Exception.InnerException;
+            }
 
             var secureStream = new SslStream(tcpClient.GetStream(), true, new RemoteCertificateValidationCallback(ValidateServerCertificate));
             secureStream.AuthenticateAsClient(address, null, System.Security.Authentication.SslProtocols.Tls, false);
@@ -71,8 +75,8 @@ namespace SharpCaster.Services
 
         public void Disconnect()
         {
-            sslStream?.Close();
-            tcpClient?.Close();
+            sslStream?.Dispose();
+            tcpClient?.Dispose();
         }
 
         public Stream Stream => sslStream;

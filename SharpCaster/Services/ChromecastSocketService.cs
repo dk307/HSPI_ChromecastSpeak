@@ -1,7 +1,10 @@
-﻿using Hspi;
+﻿using Hspi.Utils;
+using Nito.AsyncEx;
+using Nito.AsyncEx.Synchronous;
 using NullGuard;
 using SharpCaster.Channels;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,102 +17,96 @@ namespace SharpCaster.Services
         public async Task Connect(string host, int port,
             ConnectionChannel connectionChannel,
             HeartbeatChannel heartbeatChannel,
-            Func<Stream, bool, CancellationToken, Task> packetReader,
+            Func<Stream, CancellationToken, Task> packetReader,
             CancellationToken token)
         {
-            await clientConnectLock.WaitAsync(token).ConfigureAwait(false);
-            try
+            using (var sync = await clientConnectLock.LockAsync(token).ConfigureAwait(false))
             {
                 if (client != null)
                 {
                     throw new Exception("Already set");
                 }
                 client = new ChromecastTcpClient();
-                stopTokenSource = new CancellationTokenSource();
-                combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, token);
+                combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
                 CancellationToken combinedToken = combinedStopTokenSource.Token;
                 await client.ConnectAsync(host, port, combinedToken).ConfigureAwait(false);
 
-                readTask = ProcessRead(packetReader, combinedToken);
+                readTask = TaskHelper.StartAsync(() => ProcessRead(packetReader, combinedToken), combinedToken);
 
-                connectionChannel.OpenConnection(combinedStopTokenSource.Token);
-                heartbeatChannel.StartHeartbeat(combinedStopTokenSource.Token);
+                connectionChannel.OpenConnection(combinedToken);
+                heartbeatChannel.StartHeartbeat(combinedToken);
             }
-            finally
-            {
-                clientConnectLock.Release();
-            }
-        }
-
-        private async Task ProcessRead(Func<Stream, bool, CancellationToken, Task> packetReader, CancellationToken combinedToken)
-        {
-            try
-            {
-                while (!combinedToken.IsCancellationRequested)
-                {
-                    var sizeBuffer = new byte[4];
-                    byte[] messageBuffer = { };
-                    // First message should contain the size of message
-                    await client.Stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, combinedToken).ConfigureAwait(false);
-                    // The message is little-endian (that is, little end first),
-                    // reverse the byte array.
-                    Array.Reverse(sizeBuffer);
-                    //Retrieve the size of message
-                    var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
-                    messageBuffer = new byte[messageSize];
-                    await client.Stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
-                    using (var answer = new MemoryStream(messageBuffer.Length))
-                    {
-                        await answer.WriteAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
-                        answer.Position = 0;
-                        await packetReader(answer, true, combinedToken).ConfigureAwait(false);
-                    }
-                }
-            }
-            catch (ObjectDisposedException) { }
         }
 
         public async Task Disconnect(CancellationToken token)
         {
-            await clientConnectLock.WaitAsync(token).ConfigureAwait(false);
-            try
+            using (var sync = await clientConnectLock.LockAsync(token).ConfigureAwait(false))
             {
                 if (client != null)
                 {
-                    stopTokenSource.Cancel();
+                    combinedStopTokenSource?.Cancel();
                     client.Disconnect();
-                    await readTask.WaitForFinishNoCancelException().ConfigureAwait(false);
+                    await readTask?.WaitAsync(token);
                 }
-            }
-            finally
-            {
-                clientConnectLock.Release();
             }
         }
 
         public async Task Write(byte[] bytes, CancellationToken token)
         {
-            await clientWriteLock.WaitAsync(token).ConfigureAwait(false);
-            try
+            using (var sync = await clientWriteLock.LockAsync(token).ConfigureAwait(false))
             {
                 await client.Stream.WriteAsync(bytes, 0, bytes.Length, token).ConfigureAwait(false);
             }
-            finally
+        }
+
+        private async Task ProcessRead(Func<Stream, CancellationToken, Task> packetReader, CancellationToken combinedToken)
+        {
+            try
             {
-                clientWriteLock.Release();
+                using (combinedToken.Register(() => client.Disconnect()))
+                {
+                    while (!combinedToken.IsCancellationRequested)
+                    {
+                        var sizeBuffer = new byte[4];
+                        byte[] messageBuffer = { };
+                        // First message should contain the size of message
+                        await client.Stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, combinedToken).ConfigureAwait(false);
+                        // The message is little-endian (that is, little end first),
+                        // reverse the byte array.
+                        Array.Reverse(sizeBuffer);
+                        //Retrieve the size of message
+                        var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
+                        messageBuffer = new byte[messageSize];
+                        await client.Stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
+                        using (var answer = new MemoryStream(messageBuffer.Length))
+                        {
+                            await answer.WriteAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
+                            answer.Position = 0;
+                            await packetReader(answer, combinedToken).ConfigureAwait(false);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError($"Errored in Reading {ex}");
+                throw;
             }
         }
 
+        private readonly AsyncLock clientConnectLock = new AsyncLock();
+        private readonly AsyncLock clientWriteLock = new AsyncLock();
         private ChromecastTcpClient client;
-        private CancellationTokenSource stopTokenSource;
         private CancellationTokenSource combinedStopTokenSource;
-        private readonly SemaphoreSlim clientWriteLock = new SemaphoreSlim(1);
-        private readonly SemaphoreSlim clientConnectLock = new SemaphoreSlim(1);
         private Task readTask;
 
         #region IDisposable Support
 
-        private bool disposedValue = false; // To detect redundant calls
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            Dispose(true);
+        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -117,22 +114,17 @@ namespace SharpCaster.Services
             {
                 if (disposing)
                 {
+                    combinedStopTokenSource?.Cancel();
+                    client?.Disconnect();
                     combinedStopTokenSource?.Dispose();
-                    stopTokenSource?.Dispose();
                     client?.Dispose();
-                    clientWriteLock.Dispose();
-                    clientConnectLock.Dispose();
                 }
 
                 disposedValue = true;
             }
         }
 
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        private bool disposedValue = false; // To detect redundant calls
 
         #endregion IDisposable Support
     }

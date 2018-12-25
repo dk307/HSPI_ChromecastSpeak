@@ -6,7 +6,9 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Nito.AsyncEx.Synchronous;
 using static System.FormattableString;
+using Nito.AsyncEx;
 
 namespace Hspi.Web
 {
@@ -23,8 +25,7 @@ namespace Hspi.Web
         public async Task<Uri> Add(byte[] buffer, string extension, TimeSpan? duration)
         {
             // This lock allows us to wait till server has started
-            await webServerLock.WaitAsync(shutdownCancellationToken).ConfigureAwait(false);
-            try
+            using (var sync = await webServerLock.LockAsync(shutdownCancellationToken).ConfigureAwait(false))
             {
                 if ((webServer == null) || (!webServer.IsListening))
                 {
@@ -45,10 +46,6 @@ namespace Hspi.Web
                 builder.Path = path;
                 return builder.Uri;
             }
-            finally
-            {
-                webServerLock.Release();
-            }
         }
 
         // This code added to correctly implement the disposable pattern.
@@ -56,10 +53,9 @@ namespace Hspi.Web
         {
             if (!disposedValue)
             {
-                webServerTokenSource?.Dispose();
-                combinedWebServerTokenSource?.Dispose();
+                combinedWebServerTokenSource.Cancel();
                 webServer?.Dispose();
-                webServerLock.Dispose();
+                combinedWebServerTokenSource?.Dispose();
 
                 disposedValue = true;
             }
@@ -67,14 +63,12 @@ namespace Hspi.Web
 
         public async Task StartupServer(IPAddress address, ushort port)
         {
-            await webServerLock.WaitAsync(shutdownCancellationToken).ConfigureAwait(false);
-            try
+            using (var sync = await webServerLock.LockAsync(shutdownCancellationToken).ConfigureAwait(false))
             {
-                await StopOldServer().ConfigureAwait(false);
+                StopOldServer();
 
-                webServerTokenSource = new CancellationTokenSource();
                 combinedWebServerTokenSource =
-                    CancellationTokenSource.CreateLinkedTokenSource(webServerTokenSource.Token, shutdownCancellationToken);
+                    CancellationTokenSource.CreateLinkedTokenSource(shutdownCancellationToken);
 
                 webServer = new MediaWebServer(address, port);
                 Trace.TraceInformation(Invariant($"Starting Web Server on {address}:{port}"));
@@ -82,13 +76,9 @@ namespace Hspi.Web
                 webServerTask = webServer.StartListening(combinedWebServerTokenSource.Token)
                                          .ContinueWith((x) => WebServerFinished(x), combinedWebServerTokenSource.Token);
             }
-            finally
-            {
-                webServerLock.Release();
-            }
         }
 
-        private async Task StopOldServer()
+        private void StopOldServer()
         {
             try
             {
@@ -97,16 +87,8 @@ namespace Hspi.Web
                     Trace.WriteLine("Stopping old webserver if running.");
                 }
                 // Stop any existing server
-                webServerTokenSource?.Cancel();
-                if (webServerTask != null)
-                {
-                    try
-                    {
-                        await webServerTask.WaitForFinishNoCancelException().ConfigureAwait(false);
-                    }
-                    catch { }
-                }
-                webServerTokenSource?.Dispose();
+                combinedWebServerTokenSource?.Cancel();
+                webServerTask?.WaitWithoutException();
                 combinedWebServerTokenSource?.Dispose();
                 webServer?.Dispose();
             }
@@ -128,13 +110,12 @@ namespace Hspi.Web
             }
         }
 
-        private readonly SemaphoreSlim webServerLock = new SemaphoreSlim(1);
+        private readonly AsyncLock webServerLock = new AsyncLock();
         private CancellationTokenSource combinedWebServerTokenSource;
         private bool disposedValue = false;
         private int pathNumber = 0;
         private CancellationToken shutdownCancellationToken;
         private MediaWebServer webServer;
         private Task webServerTask;
-        private CancellationTokenSource webServerTokenSource;
     }
 }

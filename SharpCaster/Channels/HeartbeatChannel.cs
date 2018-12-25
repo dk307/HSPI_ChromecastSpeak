@@ -1,10 +1,11 @@
-﻿using Hspi;
-using NullGuard;
+﻿using NullGuard;
 using SharpCaster.Models;
 using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Nito.AsyncEx.Synchronous;
+using Hspi.Utils;
 
 namespace SharpCaster.Channels
 {
@@ -18,30 +19,33 @@ namespace SharpCaster.Channels
 
         public override Task Abort()
         {
-            abortCancellationSource.Cancel();
-            return heartBeatTask.WaitForFinishNoCancelException();
+            combinedCancellationSource.Cancel();
+            return heartBeatTask;
         }
 
         internal override void OnMessageReceived(CastMessage castMessage)
         {
             Trace.WriteLine(castMessage.GetJsonType());
-            if (Client.Connected || castMessage.GetJsonType() != "PONG") return;
+            if (Client.Connected || castMessage.GetJsonType() != "PONG")
+            {
+                return;
+            }
             Client.Connected = true;
         }
 
         public void StartHeartbeat(CancellationToken token)
         {
-            combinedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(token, abortCancellationSource.Token);
-            heartBeatTask = HeartBeat(combinedCancellationSource.Token);
+            combinedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+            heartBeatTask = TaskHelper.StartAsync(HeartBeat, combinedCancellationSource.Token);
         }
 
-        private async Task HeartBeat(CancellationToken combinedToken)
+        private async Task HeartBeat()
         {
             TimeSpan pingTimeSpan = TimeSpan.FromSeconds(4);
-            while (!combinedToken.IsCancellationRequested)
+            while (!combinedCancellationSource.IsCancellationRequested)
             {
-                await Write(MessageFactory.Ping, combinedToken).ConfigureAwait(false);
-                await Task.Delay(pingTimeSpan, combinedToken).ConfigureAwait(false);
+                await Write(MessageFactory.Ping, combinedCancellationSource.Token).ConfigureAwait(false);
+                await Task.Delay(pingTimeSpan, combinedCancellationSource.Token).ConfigureAwait(false);
             }
         }
 
@@ -49,17 +53,15 @@ namespace SharpCaster.Channels
         {
             if (disposing)
             {
-                abortCancellationSource.Dispose();
-                if (combinedCancellationSource != null)
-                {
-                    combinedCancellationSource.Dispose();
-                }
+                combinedCancellationSource?.Cancel();
+                heartBeatTask?.WaitWithoutException();
+                combinedCancellationSource?.Dispose();
             }
+
             base.Dispose(disposing);
         }
 
         private Task heartBeatTask;
-        private readonly CancellationTokenSource abortCancellationSource = new CancellationTokenSource();
         private CancellationTokenSource combinedCancellationSource;
     }
 }

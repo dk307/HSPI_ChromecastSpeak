@@ -1,6 +1,7 @@
-﻿using Hspi;
+﻿using Hspi.Utils;
 using Newtonsoft.Json;
 using NullGuard;
+using SharpCaster.Exceptions;
 using SharpCaster.Models;
 using SharpCaster.Models.ChromecastRequests;
 using SharpCaster.Models.ChromecastStatus;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 namespace SharpCaster.Channels
 {
     [NullGuard(ValidationFlags.Arguments | ValidationFlags.NonPublic)]
-    internal class ReceiverChannel : ChromecastChannelWithRequestTracking<ChromecastStatus>
+    internal class ReceiverChannel : ChromecastChannelWithRequestTracking<ChromecastStatusResponse>
     {
         public ReceiverChannel(ChromeCastClient client) :
             base(client, "urn:x-cast:com.google.cast.receiver")
@@ -26,7 +27,7 @@ namespace SharpCaster.Channels
             {
                 if (TryRemoveRequestTracking(response.RequestId, out var completed))
                 {
-                    completed.SetResult(response.ChromecastStatus);
+                    completed.SetResult(response);
                 }
             }
         }
@@ -37,7 +38,13 @@ namespace SharpCaster.Channels
             var message = MessageFactory.Launch(applicationId, requestId);
             var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
             await Write(message, token).ConfigureAwait(false);
-            return await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
+            var chromecastStatusResponse = await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
+
+            if (chromecastStatusResponse.ChromecastStatus == null)
+            {
+                throw new ApplicationLoadException(string.Empty, chromecastStatusResponse.Type);
+            }
+            return chromecastStatusResponse.ChromecastStatus;
         }
 
         public async Task<ChromecastStatus> GetChromecastStatus(CancellationToken token)
@@ -45,7 +52,8 @@ namespace SharpCaster.Channels
             int requestId = RequestIdProvider.Next;
             var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
             await Write(MessageFactory.Status(requestId), token).ConfigureAwait(false);
-            return await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
+            var chromecastStatusResponse = await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
+            return chromecastStatusResponse.ChromecastStatus;
         }
 
         public async Task<ChromecastStatus> SetVolume(double? level, bool? muted, CancellationToken token)
@@ -58,7 +66,8 @@ namespace SharpCaster.Channels
             int requestId = RequestIdProvider.Next;
             var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
             await Write(MessageFactory.Volume(level, muted, requestId), token).ConfigureAwait(false);
-            return await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
+            var chromecastStatusResponse = await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
+            return chromecastStatusResponse.ChromecastStatus;
         }
     }
 }

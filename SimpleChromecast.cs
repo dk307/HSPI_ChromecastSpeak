@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.FormattableString;
+using Hspi.Utils;
 
 namespace Hspi.Chromecast
 {
@@ -46,7 +47,7 @@ namespace Hspi.Chromecast
             {
                 await Connect(client, cancellationToken).ConfigureAwait(false);
 
-                var status = await LaunchApplication(client, cancellationToken).ConfigureAwait(false);
+                var status = await LaunchDefaultApplication(client, cancellationToken).ConfigureAwait(false);
 
                 bool resetVolumeBack = false;
                 var currentVolume = status?.Volume;
@@ -95,7 +96,7 @@ namespace Hspi.Chromecast
             }
         }
 
-        private static ChromecastApplication GetDefaultApplication(ChromecastStatus status)
+        private static ChromecastApplication GetDefaultApplication([AllowNull]ChromecastStatus status)
         {
             return status?.Applications?.FirstOrDefault((app) => { return app.AppId == defaultAppId; });
         }
@@ -120,7 +121,7 @@ namespace Hspi.Chromecast
             Trace.WriteLine(Invariant($"Connected to Chromecast {device.Name} on {device.DeviceIP}"));
         }
 
-        private async Task<ChromecastStatus> LaunchApplication(ChromeCastClient client, CancellationToken cancellationToken)
+        private async Task<ChromecastStatus> LaunchDefaultApplication(ChromeCastClient client, CancellationToken cancellationToken)
         {
             Trace.WriteLine(Invariant($"Launching default app on Chromecast {device.Name}"));
             ChromecastStatus status = await client.ReceiverChannel.GetChromecastStatus(cancellationToken).ConfigureAwait(false);

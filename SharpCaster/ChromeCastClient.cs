@@ -1,4 +1,6 @@
-﻿using NullGuard;
+﻿using Hspi.Utils;
+using Nito.AsyncEx;
+using NullGuard;
 using SharpCaster.Channels;
 using SharpCaster.Extensions;
 using SharpCaster.Models;
@@ -60,19 +62,13 @@ namespace SharpCaster
 
         public async Task ConnectChromecast(CancellationToken token)
         {
-            await clientConnectLock.WaitAsync(token).ConfigureAwait(false);
-            try
+            using (var sync = await clientConnectLock.LockAsync(token).ConfigureAwait(false))
             {
                 await ChromecastSocketService.Connect(DeviceUri.Host, ChromecastPort, ConnectionChannel,
                     HeartbeatChannel, ReadPacket, token).ConfigureAwait(false);
             }
-            finally
-            {
-                clientConnectLock.Release();
-            }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public async Task Disconnect(CancellationToken token)
         {
             await DisconnectCore(true, token).ConfigureAwait(false);
@@ -92,7 +88,6 @@ namespace SharpCaster
                 ReceiverChannel.Dispose();
 
                 ChromecastSocketService?.Dispose();
-                clientConnectLock.Dispose();
             }
 
             disposedValue = true;
@@ -100,13 +95,12 @@ namespace SharpCaster
 
         private async Task DisconnectCore(bool sendClose, CancellationToken token)
         {
-            await clientConnectLock.WaitAsync(token).ConfigureAwait(false);
-            try
+            using (var sync = await clientConnectLock.LockAsync(token).ConfigureAwait(false))
             {
                 List<Task> abortTasks = new List<Task>();
                 foreach (var channel in Channels)
                 {
-                    abortTasks.Add(channel.Abort());
+                    abortTasks.Add(channel.Abort().WaitForFinishNoException());
                 }
 
                 await Task.WhenAll(abortTasks.ToArray()).ConfigureAwait(false);
@@ -117,52 +111,25 @@ namespace SharpCaster
                 }
                 await ChromecastSocketService.Disconnect(token).ConfigureAwait(false);
             }
-            finally
-            {
-                clientConnectLock.Release();
-            }
         }
 
-        private async Task ReadPacket(Stream stream, bool parsed, CancellationToken token)
+        private async Task ReadPacket(Stream stream, CancellationToken token)
         {
             try
             {
-                IEnumerable<byte> entireMessage;
-                if (parsed)
-                {
-                    var buffer = new byte[stream.Length];
-                    await stream.ReadAsync(buffer, 0, buffer.Length, token);
-                    entireMessage = buffer;
-                }
-                else
-                {
-                    var sizeBuffer = new byte[4];
-                    byte[] messageBuffer = { };
-                    // First message should contain the size of message
-                    await stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, token);
-                    // The message is little-endian (that is, little end first),
-                    // reverse the byte array.
-                    Array.Reverse(sizeBuffer);
-                    //Retrieve the size of message
-                    var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
-                    messageBuffer = new byte[messageSize];
-                    await stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, token);
-                    entireMessage = messageBuffer;
-                }
+                var buffer = new byte[stream.Length];
+                await stream.ReadAsync(buffer, 0, buffer.Length, token).ConfigureAwait(false);
 
-                var entireMessageArray = entireMessage.ToArray();
-                var castMessage = entireMessageArray.ToCastMessage();
-                if (string.IsNullOrEmpty(castMessage?.Namespace)) return;
+                var castMessage = buffer.ToCastMessage();
+                if (string.IsNullOrWhiteSpace(castMessage?.Namespace))
+                {
+                    return;
+                }
                 Trace.WriteLine("Received: " + castMessage.GetJsonType());
                 ReceivedMessage(castMessage);
             }
             catch (Exception ex)
             {
-                // TODO: Catch disconnect - HResult = 0x80072745 -
-                // catch this (remote device disconnect) ex = {"An established connection was aborted
-                // by the software in your host machine. (Exception from HRESULT: 0x80072745)"}
-
-                // Log these bytes
                 Trace.WriteLine(ex);
             }
         }
@@ -176,7 +143,7 @@ namespace SharpCaster
         }
 
         private const int ChromecastPort = 8009;
-        private readonly SemaphoreSlim clientConnectLock = new SemaphoreSlim(1);
+        private readonly AsyncLock clientConnectLock = new AsyncLock();
         private IList<ChromecastChannel> Channels;
         private bool connected;
         private bool disposedValue = false; // To detect redundant calls

@@ -1,4 +1,4 @@
-﻿using Hspi;
+﻿using Hspi.Utils;
 using Newtonsoft.Json;
 using SharpCaster.Models;
 using SharpCaster.Models.ChromecastRequests;

@@ -1,4 +1,5 @@
 ﻿using HomeSeerAPI;
+using Hspi.Utils;
 using NullGuard;
 using Scheduler;
 using System;
@@ -83,7 +84,7 @@ namespace Hspi.Pages
                                       width, tooltip, autoPostBack, PageName);
         }
 
-        protected string FormDropDown(string name, NameValueCollection options, string selected,
+        protected static string FormDropDown(string name, NameValueCollection options, string selected,
                                       int width, string tooltip, bool autoPostBack, string pageName)
         {
             var dropdown = new clsJQuery.jqDropList(name, pageName, false)
@@ -107,6 +108,18 @@ namespace Hspi.Pages
             }
 
             return dropdown.Build();
+        }
+
+        protected static NameValueCollection CreateNameValueCreation<T>() where T : Enum
+        {
+            var collection = new NameValueCollection();
+
+            foreach (var value in EnumUtil.GetValues<T>())
+            {
+                collection.Add(value.ToString(), value.ToString());
+            }
+
+            return collection;
         }
 
         protected const string DeviceIdId = "DeviceIdId";

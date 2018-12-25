@@ -43,7 +43,7 @@ namespace Hspi
 #endif
                 pluginConfig.ConfigChanged += PluginConfig_ConfigChanged;
 
-                Task.Factory.StartNew(() => StartWebServer());
+                Task.Factory.StartNew(StartWebServer);
 
                 RegisterPages();
 
@@ -66,7 +66,7 @@ namespace Hspi
             {
                 var address = pluginConfig.CalculateServerIPAddress();
                 var port = pluginConfig.WebServerPort;
-                await webServerManager.StartupServer(address, port);
+                await webServerManager.StartupServer(address, port).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -76,7 +76,7 @@ namespace Hspi
 
         private void PluginConfig_ConfigChanged(object sender, EventArgs e)
         {
-            Task.Factory.StartNew(() => StartWebServer());
+            Task.Factory.StartNew(StartWebServer);
         }
 
         public override void LogDebug(string message)
@@ -154,7 +154,7 @@ namespace Hspi
             }
             catch (Exception ex)
             {
-                LogWarning(Invariant($"Failed to Speak [{text}] With: {ex.GetFullMessage()}"));
+                Trace.TraceWarning(Invariant($"Failed to Speak [{text}] With: {ex.GetFullMessage()}"));
             }
 
             if (pluginConfig.ForwardSpeach)
@@ -200,7 +200,7 @@ namespace Hspi
                 }
 
                 stopTokenSource.CancelAfter(timeout);
-                List<Task> playTasks = new List<Task>();
+                var playTasks = new List<Task>();
                 foreach (var device in devices)
                 {
                     var chromecast = new SimpleChromecast(device, uri, duration: voiceData.Duration, volume: device.Volume);
@@ -213,16 +213,16 @@ namespace Hspi
             {
                 if (stopTokenSource.IsCancellationRequested)
                 {
-                    LogWarning(Invariant($"Failed to Speak [{text}] With Timeout Error: {ex.GetFullMessage()}"));
+                    Trace.TraceWarning(Invariant($"Failed to Speak [{text}] With Timeout Error: {ex.GetFullMessage()}"));
                 }
                 else
                 {
-                    LogWarning(Invariant($"Failed to Speak [{text}] With: {ex.GetFullMessage()}"));
+                    Trace.TraceWarning(Invariant($"Failed to Speak [{text}] With: {ex.GetFullMessage()}"));
                 }
             }
             catch (Exception ex)
             {
-                LogWarning(Invariant($"Failed to Speak [{text}] With: {ex.GetFullMessage()}"));
+                Trace.TraceWarning(Invariant($"Failed to Speak [{text}] With: {ex.GetFullMessage()}"));
             }
         }
 
@@ -268,8 +268,10 @@ namespace Hspi
                 switch (actionInfo.TANumber)
                 {
                     case ActionChromecastCastTANumber:
-                        var actionPage = new ActionPage(HS, pluginConfig);
-                        return actionPage.GetRefreshActionUI(uniqueControlId ?? string.Empty, actionInfo);
+                        using (var actionPage = new ActionPage(HS, pluginConfig))
+                        {
+                            return actionPage.GetRefreshActionUI(uniqueControlId ?? string.Empty, actionInfo);
+                        }
 
                     default:
                         return base.ActionBuildUI(uniqueControlId, actionInfo);
@@ -363,8 +365,10 @@ namespace Hspi
                 switch (actionInfo.TANumber)
                 {
                     case ActionChromecastCastTANumber:
-                        var actionPage = new ActionPage(HS, pluginConfig);
-                        return actionPage.GetRefreshActionPostUI(postData, actionInfo);
+                        using (var actionPage = new ActionPage(HS, pluginConfig))
+                        {
+                            return actionPage.GetRefreshActionPostUI(postData, actionInfo);
+                        }
 
                     default:
                         return base.ActionProcessPostUI(postData, actionInfo);
@@ -404,35 +408,57 @@ namespace Hspi
 
         public override bool HandleAction(IPlugInAPI.strTrigActInfo actionInfo)
         {
-            try
+            using (var stopTokenSource = new CancellationTokenSource())
             {
-                switch (actionInfo.TANumber)
+                try
                 {
-                    case ActionChromecastCastTANumber:
-                        if (actionInfo.DataIn != null)
-                        {
-                            var action = ObjectSerialize.DeSerializeFromBytes(actionInfo.DataIn) as ChromecastCastAction;
-                            if ((action != null) && (action.IsValid()))
+                    switch (actionInfo.TANumber)
+                    {
+                        case ActionChromecastCastTANumber:
+                            if (actionInfo.DataIn != null)
                             {
-                                if (pluginConfig.Devices.TryGetValue(action.ChromecastDeviceId, out var device))
+                                var action = ObjectSerialize.DeSerializeFromBytes(actionInfo.DataIn) as ChromecastCastAction;
+                                if ((action != null) && (action.IsValid()))
                                 {
-                                    var chromecast = new SimpleChromecast(device, new System.Uri(action.Url), action.ContentType, action.Live);
-                                    chromecast.Play(false, ShutdownCancellationToken).Wait();
-                                    return true;
+                                    if (pluginConfig.Devices.TryGetValue(action.ChromecastDeviceId, out var device))
+                                    {
+                                        using (var combinedStopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopTokenSource.Token, ShutdownCancellationToken))
+                                        {
+                                            stopTokenSource.CancelAfter(60 * 1000);
+
+                                            var chromecast = new SimpleChromecast(device, new System.Uri(action.Url), action.ContentType, action.Live);
+                                            chromecast.Play(false, combinedStopTokenSource.Token).Wait();
+                                            return true;
+                                        }
+                                    }
                                 }
                             }
-                        }
-                        Trace.TraceWarning(Invariant($"Failed to execute action with invalid action"));
-                        return false;
 
-                    default:
-                        return base.HandleAction(actionInfo);
+                            Trace.TraceWarning(Invariant($"Failed to execute action with invalid action"));
+                            return false;
+
+                        default:
+                            return base.HandleAction(actionInfo);
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceWarning(Invariant($"Failed to execute action with {ex.GetFullMessage()}"));
-                return false;
+                catch (TaskCanceledException ex)
+                {
+                    if (stopTokenSource.IsCancellationRequested)
+                    {
+                        Trace.TraceWarning(Invariant($"Failed to execute action with timeout Error: {ex.GetFullMessage()}"));
+                    }
+                    else
+                    {
+                        Trace.TraceWarning(Invariant($"Failed to execute action with: {ex.GetFullMessage()}"));
+                    }
+
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceWarning(Invariant($"Failed to execute action with {ex.GetFullMessage()}"));
+                    return false;
+                }
             }
         }
 
@@ -453,11 +479,6 @@ namespace Hspi
                 if (configPage != null)
                 {
                     configPage.Dispose();
-                }
-
-                if (pluginConfig != null)
-                {
-                    pluginConfig.Dispose();
                 }
 
                 if (webServerManager != null)

@@ -87,18 +87,6 @@ namespace Hspi.Pages
             return stb.ToString();
         }
 
-        private NameValueCollection CreateNameValueCreation<T>() where T : Enum
-        {
-            var collection = new NameValueCollection();
-
-            foreach (var value in EnumUtil.GetValues<T>())
-            {
-                collection.Add(value.ToString(), value.ToString());
-            }
-
-            return collection;
-        }
-
         private const string SaveButtonName = "SaveButton";
     }
 }
