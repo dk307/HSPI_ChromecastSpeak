@@ -61,36 +61,28 @@ namespace SharpCaster.Services
 
         private async Task ProcessRead(Func<Stream, CancellationToken, Task> packetReader, CancellationToken combinedToken)
         {
-            try
+            using (combinedToken.Register(() => client.Disconnect()))
             {
-                using (combinedToken.Register(() => client.Disconnect()))
+                while (!combinedToken.IsCancellationRequested)
                 {
-                    while (!combinedToken.IsCancellationRequested)
+                    var sizeBuffer = new byte[4];
+                    byte[] messageBuffer = { };
+                    // First message should contain the size of message
+                    await client.Stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, combinedToken).ConfigureAwait(false);
+                    // The message is little-endian (that is, little end first),
+                    // reverse the byte array.
+                    Array.Reverse(sizeBuffer);
+                    //Retrieve the size of message
+                    var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
+                    messageBuffer = new byte[messageSize];
+                    await client.Stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
+                    using (var answer = new MemoryStream(messageBuffer.Length))
                     {
-                        var sizeBuffer = new byte[4];
-                        byte[] messageBuffer = { };
-                        // First message should contain the size of message
-                        await client.Stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, combinedToken).ConfigureAwait(false);
-                        // The message is little-endian (that is, little end first),
-                        // reverse the byte array.
-                        Array.Reverse(sizeBuffer);
-                        //Retrieve the size of message
-                        var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
-                        messageBuffer = new byte[messageSize];
-                        await client.Stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
-                        using (var answer = new MemoryStream(messageBuffer.Length))
-                        {
-                            await answer.WriteAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
-                            answer.Position = 0;
-                            await packetReader(answer, combinedToken).ConfigureAwait(false);
-                        }
+                        await answer.WriteAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
+                        answer.Position = 0;
+                        await packetReader(answer, combinedToken).ConfigureAwait(false);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError($"Errored in Reading {ex}");
-                throw;
             }
         }
 
