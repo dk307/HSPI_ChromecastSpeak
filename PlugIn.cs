@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -131,10 +132,12 @@ namespace Hspi
                     }
                     else
                     {
+                        string name = individualHost.Split(':').FirstOrDefault();
+
                         foreach (var chromecastDevice in chromecastDevices)
                         {
-                            string deviceName = chromecastDevice.Key;
-                            if (string.Compare(individualHostReal, deviceName, StringComparison.OrdinalIgnoreCase) == 0)
+                            string deviceName = chromecastDevice.Value.Name;
+                            if (string.Compare(name, deviceName, StringComparison.OrdinalIgnoreCase) == 0)
                             {
                                 selectedDevices.Add(deviceName, chromecastDevice.Value);
                             }

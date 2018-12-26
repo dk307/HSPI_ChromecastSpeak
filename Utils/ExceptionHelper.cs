@@ -20,8 +20,7 @@ namespace Hspi.Utils
 
                 case SharpCaster.Exceptions.MediaLoadException mediaLoadException:
                     return Invariant(
-                    $@"Failed to start to play voice on {mediaLoadException.DeviceName} with Error:{mediaLoadException.FailureType}.
-                       Make sure firewall from Device to HomeSeer is not blocking it.");
+                    $@"Failed to start to play media on {mediaLoadException.DeviceName} with Error:{mediaLoadException.FailureType}");
 
                 case SharpCaster.Exceptions.ChromecastDeviceException chromeDeviceException:
                     return Invariant($"Failed to play on to {chromeDeviceException.DeviceName} with {chromeDeviceException.Message}");
