@@ -1,10 +1,8 @@
 ﻿using Hspi.Utils;
 using Nito.AsyncEx;
-using Nito.AsyncEx.Synchronous;
 using NullGuard;
 using SharpCaster.Channels;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,12 +40,9 @@ namespace SharpCaster.Services
         {
             using (var sync = await clientConnectLock.LockAsync(token).ConfigureAwait(false))
             {
-                if (client != null)
-                {
-                    combinedStopTokenSource?.Cancel();
-                    client.Disconnect();
-                    await readTask?.WaitAsync(token);
-                }
+                combinedStopTokenSource?.Cancel();
+                client?.Disconnect();
+                await readTask?.WaitForFinishNoException();
             }
         }
 

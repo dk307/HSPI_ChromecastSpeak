@@ -22,7 +22,7 @@ namespace SharpCaster.Channels
                 {
                     try
                     {
-                        await Client.Abort().ConfigureAwait(false);
+                        await Client.Abort(CancellationToken.None).ConfigureAwait(false);
                     }
                     catch (ObjectDisposedException)
                     { }

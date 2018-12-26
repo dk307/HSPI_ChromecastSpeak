@@ -55,7 +55,7 @@ namespace SharpCaster
 
         internal ChromecastSocketService ChromecastSocketService { get; set; }
 
-        public async Task Abort(CancellationToken token = default(CancellationToken))
+        public async Task Abort(CancellationToken token)
         {
             await DisconnectCore(false, token).ConfigureAwait(false);
         }
@@ -97,19 +97,20 @@ namespace SharpCaster
         {
             using (var sync = await clientConnectLock.LockAsync(token).ConfigureAwait(false))
             {
-                List<Task> abortTasks = new List<Task>();
+                if (sendClose)
+                {
+                    await ConnectionChannel.CloseConnection(token).ConfigureAwait(false);
+                }
+                await ChromecastSocketService.Disconnect(token).ConfigureAwait(false);
+
+                var abortTasks = new List<Task>();
+
                 foreach (var channel in Channels)
                 {
                     abortTasks.Add(channel.Abort().WaitForFinishNoException());
                 }
 
                 await Task.WhenAll(abortTasks.ToArray()).ConfigureAwait(false);
-
-                if (sendClose)
-                {
-                    await ConnectionChannel.CloseConnection(token).ConfigureAwait(false);
-                }
-                await ChromecastSocketService.Disconnect(token).ConfigureAwait(false);
             }
         }
 
