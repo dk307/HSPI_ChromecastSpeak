@@ -16,7 +16,7 @@ $currentPrincipal = New-Object Security.Principal.WindowsPrincipal( [Security.Pr
 if ( -not $currentPrincipal.IsInRole( [Security.Principal.WindowsBuiltInRole]::Administrator ))
 {
      write-host "Error Script only works as administrator".
-    // return
+     return
 }
 
 $builder = New-Object System.UriBuilder
@@ -25,22 +25,7 @@ $builder.Port = $port
 $builder.Scheme = 'http'
 $serviceUrl = $builder.ToString()
 
-$serviceUser = [String]::Join("\", $env:userdomain, $env:username)
-
-if( -not (netsh http show urlacl url=$serviceUrl | Where-Object { $_ -match [regex]::Escape($serviceUrl) }) )
-{
-    if ($operation -eq 'add') {
-        Write-Verbose -Message ('Granting {0} permission to listen on {1}' -f $serviceUser, $serviceUrl) -Verbose
-        netsh http add urlacl url=$serviceUrl  user=$serviceUser| Write-Verbose -Verbose
-    }
-} else {
-    if ($operation -eq 'remove') {
-        Write-Verbose -Message ('Removing listen on {0}' -f $serviceUrl) -Verbose
-        netsh http delete urlacl url=$serviceUrl | Write-Verbose -Verbose
-    }
-}
-
-$ruleName = 'Homeseer Chromecast Speak'
+$ruleName = 'HSPI Chromecast Speak Plugin'
 $exitingRules = @()
 
 $potentialRules = @(Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)
@@ -56,7 +41,7 @@ foreach($rule in $potentialRules) {
 if ($operation -eq 'add') {
     if ($exitingRules.Length -eq 0) {
         Write-Verbose -Message ('Adding Firewall rule for {0}' -f $serviceUrl) -Verbose
-        New-NetFirewallRule -DisplayName 'Homeseer Chromecast Speak' -LocalAddress $ipAddress -LocalPort $port -Protocol TCP -Program "System" | Write-Verbose -Verbose
+        New-NetFirewallRule -DisplayName $ruleName -LocalAddress $ipAddress -LocalPort $port -Protocol TCP | Write-Verbose -Verbose
     }
 }
 

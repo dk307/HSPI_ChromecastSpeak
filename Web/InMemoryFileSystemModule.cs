@@ -43,15 +43,6 @@ namespace Hspi.Web
         }
 
         /// <summary>
-        /// Gets the collection holding the MIME types.
-        /// </summary>
-        /// <value>
-        /// The MIME types.
-        /// </value>
-        public static IReadOnlyDictionary<string, string> MimeTypes
-            => new ReadOnlyDictionary<string, string>(Unosquare.Labs.EmbedIO.Constants.MimeTypes.DefaultMimeTypes);
-
-        /// <summary>
         /// Gets the name of this module.
         /// </summary>
         /// <value>
@@ -109,14 +100,14 @@ namespace Hspi.Web
             return false;
         }
 
-        private static string GetUrlPath(HttpListenerContext context)
+        private static string GetUrlPath(IHttpContext context)
         {
             var urlPath = context.RequestPathCaseSensitive().Replace('/', Path.DirectorySeparatorChar);
             urlPath = urlPath.TrimStart(Path.DirectorySeparatorChar);
             return urlPath;
         }
 
-        private static async Task WriteToOutputMemoryStream(HttpListenerContext context, long byteLength, byte[] buffer,
+        private static async Task WriteToOutputMemoryStream(IHttpContext context, long byteLength, byte[] buffer,
             int lowerByteIndex, CancellationToken ct)
         {
             checked
@@ -133,7 +124,7 @@ namespace Hspi.Web
             }
         }
 
-        private async Task<bool> HandleGet(HttpListenerContext context, CancellationToken ct, bool sendBuffer = true)
+        private async Task<bool> HandleGet(IHttpContext context, CancellationToken ct, bool sendBuffer = true)
         {
             Trace.WriteLine($"Request Type {context.RequestVerb()} from {context.Request.RemoteEndPoint} for {context.Request.Url}");
 
@@ -237,7 +228,7 @@ namespace Hspi.Web
             return true;
         }
 
-        private async Task<bool> SendFileList(HttpListenerContext context, CancellationToken ct)
+        private async Task<bool> SendFileList(IHttpContext context, CancellationToken ct)
         {
             StringBuilder stb = new StringBuilder();
 
@@ -264,12 +255,13 @@ namespace Hspi.Web
             return await context.HtmlResponseAsync(stb.ToString(), cancellationToken: ct).ConfigureAwait(false);
         }
 
-        private void SetHeaders(HttpListenerContext context, string localPath, string utcFileDateString)
+        private void SetHeaders(IHttpContext context, string localPath, string utcFileDateString)
         {
             var fileExtension = Path.GetExtension(localPath);
 
-            if (MimeTypes.ContainsKey(fileExtension))
-                context.Response.ContentType = MimeTypes[fileExtension];
+            var mimeTypes = MimeTypes.DefaultMimeTypes.Value;
+            if (mimeTypes.ContainsKey(fileExtension))
+                context.Response.ContentType = mimeTypes[fileExtension];
 
             context.Response.AddHeader(Headers.CacheControl,
                 DefaultHeaders.ContainsKey(Headers.CacheControl)
@@ -290,7 +282,7 @@ namespace Hspi.Web
             context.Response.AddHeader(Headers.AcceptRanges, "bytes");
         }
 
-        private void SetStatusCode304(HttpListenerContext context)
+        private void SetStatusCode304(IHttpContext context)
         {
             context.Response.AddHeader(Headers.CacheControl,
                 DefaultHeaders.ContainsKey(Headers.CacheControl)

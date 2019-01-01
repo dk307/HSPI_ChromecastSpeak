@@ -14,7 +14,7 @@ Chromecast Device Settings
 
 Firewall
 ------------
-Open the firewall based on Settings. Windows 10 powershell script is included.
+Open the firewall based on port settings. Windows 10 powershell script is included.
 ![Firewall](/asserts/firewall.PNG "Firewall")
 
 Build State
