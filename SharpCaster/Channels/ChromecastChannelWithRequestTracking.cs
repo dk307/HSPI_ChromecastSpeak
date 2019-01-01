@@ -1,9 +1,8 @@
-﻿using SharpCaster.Exceptions;
+﻿using Nito.AsyncEx;
+using SharpCaster.Exceptions;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Nito.AsyncEx;
-using Nito.AsyncEx.Synchronous;
 
 namespace SharpCaster.Channels
 {
@@ -63,7 +62,7 @@ namespace SharpCaster.Channels
             }
         }
 
-        private bool aborted = false;
+        private volatile bool aborted = false;
         private readonly AsyncLock completedListLock = new AsyncLock();
 
         private readonly IDictionary<int, TaskCompletionSource<T>> completedList =

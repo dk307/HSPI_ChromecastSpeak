@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Hspi</RootNamespace>
     <AssemblyName>HSPI_ChromecastSpeak</AssemblyName>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -115,6 +115,7 @@
     <Compile Include="Pages\ConfigPage.cs" />
     <Compile Include="Pages\PageHelper.cs" />
     <Compile Include="SharpCaster\Exceptions\ApplicationLoadException.cs" />
+    <Compile Include="SharpCaster\Models\ChromecastRequests\StopApplicationRequest.cs" />
     <Compile Include="Utils\EnumUtil.cs" />
     <Compile Include="Utils\ExceptionHelper.cs" />
     <Compile Include="Exceptions\VoiceGenerationException.cs" />
@@ -224,18 +225,15 @@
       <Version>1.16.1</Version>
     </PackageReference>
     <PackageReference Include="Fody">
-      <Version>3.3.3</Version>
+      <Version>3.3.5</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="homeseer">
       <Version>1.2.8</Version>
     </PackageReference>
-    <PackageReference Include="ILRepack">
-      <Version>2.1.0-beta1</Version>
-    </PackageReference>
-    <PackageReference Include="ILRepack.Lib.MSBuild.Task">
-      <Version>2.0.13</Version>
+    <PackageReference Include="ILMerge">
+      <Version>3.0.21</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>12.0.1</Version>
@@ -276,8 +274,8 @@
       <Using xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Namespace="System.Xml.Linq" />
     </Task>
   </UsingTask>
-  <!-- ILRepack -->
-  <Target Name="AfterBuild" Condition="'$(Configuration)' == 'Release'">
+
+  <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release' ">
     <ItemGroup>
       <InputAssemblies Include="$(OutputPath)\HSPI_ChromecastSpeak.exe" />
       <InputAssemblies Include="$(OutputPath)\Newtonsoft.Json.dll" />
@@ -291,13 +289,14 @@
       <InputAssemblies Include="$(OutputPath)\Nito.Disposables.dll" />
       <InputAssemblies Include="$(OutputPath)\System.Collections.Immutable.dll" />
     </ItemGroup>
-    <ItemGroup>
-      <!-- Must be a fully qualified name -->
-      <!--<DoNotInternalizeAssemblies Include="ExampleAssemblyToMerge3" />-->
-    </ItemGroup>
-    <ILRepack Parallel="true" Internalize="true" InternalizeExclude="@(DoNotInternalizeAssemblies)" InputAssemblies="@(InputAssemblies)" TargetKind="SameAsPrimaryAssembly" OutputFile="$(OutputPath)\$(AssemblyName).exe" />
+    <!-- <CreateItem Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)'=='.dll'"> -->
+      <!-- <Output ItemName="AssembliesToMerge" TaskParameter="Include" /> -->
+    <!-- </CreateItem> -->
+    <Message Importance="high" Text="Executing ILMerge in $(ProjectDir)..." />
+    <Exec WorkingDirectory="$(ProjectDir)"
+		  Command="&quot;$(ILMergeConsolePath)&quot; /ndebug /target:winexe /out:@(MainAssembly) /internalize /targetplatform:v4 @(InputAssemblies->'&quot;%(FullPath)&quot;', ' ')" />
+    <!-- <Delete Files="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')" /> -->
   </Target>
-  <!-- /ILRepack -->
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

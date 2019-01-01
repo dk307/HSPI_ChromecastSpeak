@@ -56,31 +56,42 @@ namespace SharpCaster.Services
 
         private async Task ProcessRead(Func<Stream, CancellationToken, Task> packetReader, CancellationToken combinedToken)
         {
-            using (combinedToken.Register(() => client.Disconnect()))
+            try
             {
-                while (!combinedToken.IsCancellationRequested)
+                using (combinedToken.Register(() => client.Disconnect()))
                 {
-                    var sizeBuffer = new byte[4];
-                    byte[] messageBuffer = { };
-                    // First message should contain the size of message
-                    await client.Stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, combinedToken).ConfigureAwait(false);
-                    // The message is little-endian (that is, little end first),
-                    // reverse the byte array.
-                    Array.Reverse(sizeBuffer);
-                    //Retrieve the size of message
-                    var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
-                    messageBuffer = new byte[messageSize];
-                    await client.Stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
-                    using (var answer = new MemoryStream(messageBuffer.Length))
+                    while (!combinedToken.IsCancellationRequested)
                     {
-                        await answer.WriteAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
-                        answer.Position = 0;
-                        await packetReader(answer, combinedToken).ConfigureAwait(false);
+                        var sizeBuffer = new byte[4];
+
+                        // First message should contain the size of message
+                        await client.Stream.ReadAsync(sizeBuffer, 0, sizeBuffer.Length, combinedToken).ConfigureAwait(false);
+                        // The message is little-endian (that is, little end first), reverse the byte array.
+                        Array.Reverse(sizeBuffer);
+
+                        //Retrieve the size of message
+                        var messageSize = BitConverter.ToInt32(sizeBuffer, 0);
+                        var messageBuffer = new byte[messageSize];
+                        await client.Stream.ReadAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
+                        using (var answer = new MemoryStream(messageBuffer.Length))
+                        {
+                            await answer.WriteAsync(messageBuffer, 0, messageBuffer.Length, combinedToken).ConfigureAwait(false);
+                            answer.Position = 0;
+                            await packetReader(answer, combinedToken).ConfigureAwait(false);
+                        }
                     }
                 }
             }
+            catch
+            {
+                disconnectedTokenSource.Cancel();
+                throw;
+            }
         }
 
+        public CancellationToken Disconnected => disconnectedTokenSource.Token;
+
+        private readonly CancellationTokenSource disconnectedTokenSource = new CancellationTokenSource();
         private readonly AsyncLock clientConnectLock = new AsyncLock();
         private readonly AsyncLock clientWriteLock = new AsyncLock();
         private ChromecastTcpClient client;
@@ -95,6 +106,7 @@ namespace SharpCaster.Services
             Dispose(true);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "disconnectedTokenSource")]
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -103,7 +115,6 @@ namespace SharpCaster.Services
                 {
                     combinedStopTokenSource?.Cancel();
                     client?.Disconnect();
-                    combinedStopTokenSource?.Dispose();
                     client?.Dispose();
                 }
 

@@ -1,6 +1,5 @@
 ﻿using NullGuard;
 using SharpCaster.Models;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,21 +17,13 @@ namespace SharpCaster.Channels
         {
             if (castMessage.GetJsonType() == "CLOSE")
             {
-                Task.Run(async () =>
-                {
-                    try
-                    {
-                        await Client.Abort(CancellationToken.None).ConfigureAwait(false);
-                    }
-                    catch (ObjectDisposedException)
-                    { }
-                });
+                Task.Run(() => closeReceived.Cancel());
             };
         }
 
         public override Task Abort()
         {
-            return Task.FromResult(true);
+            return Task.CompletedTask;
         }
 
         public async void OpenConnection(CancellationToken token)
@@ -49,5 +40,9 @@ namespace SharpCaster.Channels
         {
             await Write(MessageFactory.ConnectWithDestination(transportId), token).ConfigureAwait(false);
         }
+
+        public CancellationToken CloseReceived => closeReceived.Token;
+
+        private readonly CancellationTokenSource closeReceived = new CancellationTokenSource();
     }
 }

@@ -23,7 +23,7 @@ namespace SharpCaster.Exceptions
         {
             if (info == null)
             {
-                throw new ArgumentNullException("info");
+                throw new ArgumentNullException(nameof(info));
             }
 
             info.AddValue(FailureTypeKey, this.FailureType);

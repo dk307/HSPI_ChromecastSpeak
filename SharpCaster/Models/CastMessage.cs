@@ -6,18 +6,14 @@ using System.IO;
 namespace SharpCaster.Models
 {
     [ProtoContract]
-    internal class CastMessage
+    internal sealed class CastMessage
     {
-        public CastMessage()
+        public CastMessage() :
+            this("receiver-0", "sender-0")
         {
-            ProtocolVersion = 0;
-            PayloadType = 0;
-            PayloadBinary = null;
-            DestinationId = "receiver-0";
-            SourceId = "sender-0";
         }
 
-        public CastMessage(string destinationId = "receiver-0", string sourceId = "sender-0")
+        public CastMessage(string destinationId, string sourceId)
         {
             ProtocolVersion = 0;
             PayloadType = 0;

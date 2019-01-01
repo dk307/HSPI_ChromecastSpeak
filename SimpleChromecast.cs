@@ -1,17 +1,17 @@
-﻿using NullGuard;
+﻿using Hspi.Utils;
+using NullGuard;
 using SharpCaster;
+using SharpCaster.Channels;
 using SharpCaster.Exceptions;
 using SharpCaster.Models.ChromecastStatus;
 using SharpCaster.Models.MediaStatus;
 using SharpCaster.Models.Metadata;
-using SharpCaster.Channels;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.FormattableString;
-using Hspi.Utils;
 
 namespace Hspi.Chromecast
 {
@@ -67,18 +67,22 @@ namespace Hspi.Chromecast
 
                 client.MediaChannel.MessageReceived += MediaChannel_MessageReceived;
 
+                playbackFinished = new TaskCompletionSource<bool>(cancellationToken);
                 loadedMediaStatus = await LoadMedia(client, defaultApplication, cancellationToken).ConfigureAwait(false);
 
                 if (loadedMediaStatus == null)
                 {
                     throw new MediaLoadException(device.DeviceIP.ToString(), "Failed to load");
                 }
+
                 if (waitforCompletion)
                 {
-                    await playbackFinished.Task.WaitOnRequestCompletion(cancellationToken).ConfigureAwait(false);
+                    await WaitForTaskCompleteOrDisconnect(client, playbackFinished.Task, cancellationToken).ConfigureAwait(false);
 
                     Trace.TraceInformation(Invariant($"Finished Playing Media on Chromecast {device.Name}"));
                     client.MediaChannel.MessageReceived -= MediaChannel_MessageReceived;
+
+                    await client.ReceiverChannel.StopApplication(defaultAppId, cancellationToken).ConfigureAwait(false);
 
                     // Restore the existing volume
                     if (resetVolumeBack)
@@ -107,16 +111,22 @@ namespace Hspi.Chromecast
             {
                 connectedSource.SetResult(true);
             }
+            else
+            {
+                disConnectedSource.SetResult(false);
+            }
         }
 
         private async Task Connect(ChromeCastClient client, CancellationToken cancellationToken)
         {
             Trace.WriteLine(Invariant($"Connecting to Chromecast {device.Name} on {device.DeviceIP}"));
+
             connectedSource = new TaskCompletionSource<bool>(cancellationToken);
+            disConnectedSource = new TaskCompletionSource<bool>(cancellationToken);
             client.ConnectedChanged += Client_ConnectedChanged;
+
             await client.ConnectChromecast(cancellationToken).ConfigureAwait(false);
             await connectedSource.Task.WaitOnRequestCompletion(cancellationToken).ConfigureAwait(false);
-            client.ConnectedChanged -= Client_ConnectedChanged;
 
             Trace.WriteLine(Invariant($"Connected to Chromecast {device.Name} on {device.DeviceIP}"));
         }
@@ -176,7 +186,7 @@ namespace Hspi.Chromecast
                             case IdleReason.CANCELLED:
                             case IdleReason.ERROR:
                             case IdleReason.INTERRUPTED:
-                                playbackFinished.SetException(new MediaLoadException(device.DeviceIP.ToString(),
+                                playbackFinished.SetException(new MediaLoadException(device.Name,
                                                                                      mediaStatus.IdleReason.ToString()));
                                 break;
 
@@ -189,15 +199,28 @@ namespace Hspi.Chromecast
             }
         }
 
+        private async Task WaitForTaskCompleteOrDisconnect(ChromeCastClient client, Task task, CancellationToken token)
+        {
+            var disconnectedTask = disConnectedSource.Task;
+            var completedTask = await Task.WhenAny(disconnectedTask, task, Task.Delay(-1, token)).ConfigureAwait(false);
+
+            if (completedTask == disconnectedTask)
+            {
+                throw new ChromecastDeviceException(device.Name, "Device got disconnected");
+            }
+            token.ThrowIfCancellationRequested();
+        }
+
         private const string defaultAppId = "CC1AD845";
+        private readonly string contentType;
         private readonly ChromecastDevice device;
         private readonly TimeSpan? duration;
-        private readonly Uri playUri;
-        private readonly string contentType;
         private readonly bool live;
+        private readonly Uri playUri;
         private readonly double? volume;
         private TaskCompletionSource<bool> connectedSource;
+        private TaskCompletionSource<bool> disConnectedSource;
         private MediaStatus loadedMediaStatus;
-        private TaskCompletionSource<bool> playbackFinished = new TaskCompletionSource<bool>();
+        private TaskCompletionSource<bool> playbackFinished;
     };
 }

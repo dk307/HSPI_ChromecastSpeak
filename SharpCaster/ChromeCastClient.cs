@@ -42,7 +42,10 @@ namespace SharpCaster
             {
                 var oldConnected = connected;
                 connected = value;
-                if (connected != oldConnected) ConnectedChanged?.Invoke(this, value);
+                if (connected != oldConnected)
+                {
+                    ConnectedChanged?.Invoke(this, value);
+                }
             }
         }
 
@@ -50,20 +53,16 @@ namespace SharpCaster
         public Uri DeviceUri { get; }
         public HeartbeatChannel HeartbeatChannel { get; }
         public MediaChannel MediaChannel { get; }
-
         public ReceiverChannel ReceiverChannel { get; }
-
         internal ChromecastSocketService ChromecastSocketService { get; set; }
-
-        public async Task Abort(CancellationToken token)
-        {
-            await DisconnectCore(false, token).ConfigureAwait(false);
-        }
 
         public async Task ConnectChromecast(CancellationToken token)
         {
             using (var sync = await clientConnectLock.LockAsync(token).ConfigureAwait(false))
             {
+                ChromecastSocketService.Disconnected.Register(async () => await ConnectionDroped(false));
+                ConnectionChannel.CloseReceived.Register(async () => await ConnectionDroped(true));
+
                 await ChromecastSocketService.Connect(DeviceUri.Host, ChromecastPort, ConnectionChannel,
                     HeartbeatChannel, ReadPacket, token).ConfigureAwait(false);
             }
@@ -71,7 +70,7 @@ namespace SharpCaster
 
         public async Task Disconnect(CancellationToken token)
         {
-            await DisconnectCore(true, token).ConfigureAwait(false);
+            await DisconnectCore(true, true, token).ConfigureAwait(false);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<ConnectionChannel>k__BackingField")]
@@ -86,31 +85,42 @@ namespace SharpCaster
                 ConnectionChannel.Dispose();
                 MediaChannel.Dispose();
                 ReceiverChannel.Dispose();
-
                 ChromecastSocketService?.Dispose();
             }
 
             disposedValue = true;
         }
 
-        private async Task DisconnectCore(bool sendClose, CancellationToken token)
+        private async Task ConnectionDroped(bool disconnectSocket)
         {
-            using (var sync = await clientConnectLock.LockAsync(token).ConfigureAwait(false))
+            await DisconnectCore(false, disconnectSocket, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        private async Task DisconnectCore(bool sendClose, bool disconnectSocket, CancellationToken token)
+        {
+            if (connected)
             {
-                if (sendClose)
+                Connected = false;
+                using (var sync = await clientConnectLock.LockAsync(token).ConfigureAwait(false))
                 {
-                    await ConnectionChannel.CloseConnection(token).ConfigureAwait(false);
+                    if (sendClose)
+                    {
+                        await ConnectionChannel.CloseConnection(token).ConfigureAwait(false);
+                    }
+                    if (disconnectSocket)
+                    {
+                        await ChromecastSocketService.Disconnect(token).ConfigureAwait(false);
+                    }
+
+                    var abortTasks = new List<Task>();
+
+                    foreach (var channel in Channels)
+                    {
+                        abortTasks.Add(channel.Abort().WaitForFinishNoException());
+                    }
+
+                    await Task.WhenAll(abortTasks.ToArray()).ConfigureAwait(false);
                 }
-                await ChromecastSocketService.Disconnect(token).ConfigureAwait(false);
-
-                var abortTasks = new List<Task>();
-
-                foreach (var channel in Channels)
-                {
-                    abortTasks.Add(channel.Abort().WaitForFinishNoException());
-                }
-
-                await Task.WhenAll(abortTasks.ToArray()).ConfigureAwait(false);
             }
         }
 
@@ -146,7 +156,7 @@ namespace SharpCaster
         private const int ChromecastPort = 8009;
         private readonly AsyncLock clientConnectLock = new AsyncLock();
         private IList<ChromecastChannel> Channels;
-        private bool connected;
+        private volatile bool connected = false;
         private bool disposedValue = false; // To detect redundant calls
     }
 }

@@ -1,11 +1,10 @@
-﻿using NullGuard;
+﻿using Hspi.Utils;
+using NullGuard;
 using SharpCaster.Models;
 using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Nito.AsyncEx.Synchronous;
-using Hspi.Utils;
 
 namespace SharpCaster.Channels
 {
@@ -42,10 +41,11 @@ namespace SharpCaster.Channels
         private async Task HeartBeat()
         {
             TimeSpan pingTimeSpan = TimeSpan.FromSeconds(4);
-            while (!combinedCancellationSource.IsCancellationRequested)
+            var cancelToken = combinedCancellationSource.Token;
+            while (!cancelToken.IsCancellationRequested)
             {
-                await Write(MessageFactory.Ping, combinedCancellationSource.Token).ConfigureAwait(false);
-                await Task.Delay(pingTimeSpan, combinedCancellationSource.Token).ConfigureAwait(false);
+                await Write(MessageFactory.Ping, cancelToken).ConfigureAwait(false);
+                await Task.Delay(pingTimeSpan, cancelToken).ConfigureAwait(false);
             }
         }
 
@@ -54,8 +54,6 @@ namespace SharpCaster.Channels
             if (disposing)
             {
                 combinedCancellationSource?.Cancel();
-                heartBeatTask?.WaitWithoutException();
-                combinedCancellationSource?.Dispose();
             }
 
             base.Dispose(disposing);

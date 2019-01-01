@@ -47,6 +47,16 @@ namespace SharpCaster.Channels
             return chromecastStatusResponse.ChromecastStatus;
         }
 
+        public async Task<ChromecastStatus> StopApplication(string applicationId, CancellationToken token)
+        {
+            int requestId = RequestIdProvider.Next;
+            var message = MessageFactory.StopApplication(applicationId, requestId);
+            var requestCompletedSource = await AddRequestTracking(requestId, token).ConfigureAwait(false);
+            await Write(message, token).ConfigureAwait(false);
+            var chromecastStatusResponse = await requestCompletedSource.Task.WaitOnRequestCompletion(token).ConfigureAwait(false);
+            return chromecastStatusResponse.ChromecastStatus;
+        }
+
         public async Task<ChromecastStatus> GetChromecastStatus(CancellationToken token)
         {
             int requestId = RequestIdProvider.Next;

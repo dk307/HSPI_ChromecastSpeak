@@ -40,10 +40,6 @@ namespace SharpCaster.Channels
         {
             if (!disposedValue)
             {
-                if (disposing)
-                {
-                }
-
                 disposedValue = true;
             }
         }
