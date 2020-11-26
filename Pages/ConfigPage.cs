@@ -136,18 +136,18 @@ namespace Hspi.Pages
 
                     pluginConfig.AddDevice(device);
                     pluginConfig.FireConfigChanged();
-                    divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
+                    divToUpdate.Add(SaveErrorDivId, RedirectPageJS(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
                 }
             }
             else if (form == NameToIdWithPrefix(CancelDeviceName))
             {
-                divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
+                divToUpdate.Add(SaveErrorDivId, RedirectPageJS(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
             }
             else if (form == NameToIdWithPrefix(DeleteDeviceName))
             {
                 pluginConfig.RemoveDevice(parts[DeviceIdId]);
                 pluginConfig.FireConfigChanged();
-                divToUpdate.Add(SaveErrorDivId, RedirectPage(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
+                divToUpdate.Add(SaveErrorDivId, RedirectPageJS(Invariant($"/{HttpUtility.UrlEncode(ConfigPage.Name)}")));
             }
             else if (form == NameToIdWithPrefix(SaveSettingName))
             {

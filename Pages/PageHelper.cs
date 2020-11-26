@@ -121,6 +121,14 @@ namespace Hspi.Pages
 
             return collection;
         }
+        protected static string RedirectPageJS(string url)
+        {
+            StringBuilder stb = new StringBuilder();
+            stb.AppendLine("<script type='text/javascript'>");
+            stb.AppendLine(Invariant($"$(document).ready(function() {{ location.assign('{url}'); }});"));
+            stb.AppendLine("</script>");
+            return stb.ToString();
+        }
 
         protected const string DeviceIdId = "DeviceIdId";
         protected const string PageTypeId = "type";
