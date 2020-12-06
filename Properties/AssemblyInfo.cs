@@ -7,11 +7,11 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 
 [assembly: AssemblyTitle("HSPI Chromecast Speak Plugin")]
-[assembly: AssemblyDescription("HomeSeer Chromecast Speak  Plugin")]
+[assembly: AssemblyDescription("HomeSeer Chromecast Speak Plugin")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("HSPI Chromecast Speak  Plugin")]
-[assembly: AssemblyCopyright("Copyright ©  2017")]
+[assembly: AssemblyProduct("HSPI Chromecast Speak Plugin")]
+[assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
