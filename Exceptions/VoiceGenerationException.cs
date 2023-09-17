@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace Hspi.Exceptions
 {
     [Serializable]
-    internal class VoiceGenerationException : HspiException
+    public class VoiceGenerationException : HspiException
     {
         public VoiceGenerationException(string message) : base(message)
         {

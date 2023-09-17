@@ -234,16 +234,32 @@
   <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release' ">
     <ItemGroup>
       <InputAssemblies Include="$(OutputPath)\HSPI_ChromecastSpeak.exe" />
-      <InputAssemblies Include="$(OutputPath)\Newtonsoft.Json.dll" />
-      <InputAssemblies Include="$(OutputPath)\protobuf-net.dll" />
-      <InputAssemblies Include="$(OutputPath)\TagLib.Portable.dll" />
-      <InputAssemblies Include="$(OutputPath)\Unosquare.Labs.EmbedIO.dll" />
-      <InputAssemblies Include="$(OutputPath)\Unosquare.Swan.Lite.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Coordination.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Tasks.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.Collections.Deque.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.Disposables.dll" />
-      <InputAssemblies Include="$(OutputPath)\System.Collections.Immutable.dll" />
+<InputAssemblies Include="$(OutputPath)\Google.Protobuf.dll" />
+<InputAssemblies Include="$(OutputPath)\Microsoft.Bcl.AsyncInterfaces.dll" />
+<InputAssemblies Include="$(OutputPath)\Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+<InputAssemblies Include="$(OutputPath)\Microsoft.Extensions.DependencyInjection.dll" />
+<InputAssemblies Include="$(OutputPath)\Microsoft.Extensions.Logging.Abstractions.dll" />
+<InputAssemblies Include="$(OutputPath)\Newtonsoft.Json.dll" />
+<InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Coordination.dll" />
+<InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Tasks.dll" />
+<InputAssemblies Include="$(OutputPath)\Nito.Collections.Deque.dll" />
+<InputAssemblies Include="$(OutputPath)\Nito.Disposables.dll" />
+<InputAssemblies Include="$(OutputPath)\Sharpcaster.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Buffers.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Collections.Immutable.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Configuration.ConfigurationManager.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Diagnostics.DiagnosticSource.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Memory.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Numerics.Vectors.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Runtime.CompilerServices.Unsafe.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Security.AccessControl.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Security.Permissions.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Security.Principal.Windows.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Threading.Tasks.Extensions.dll" />
+<InputAssemblies Include="$(OutputPath)\TagLib.Portable.dll" />
+<InputAssemblies Include="$(OutputPath)\Tmds.MDns.dll" />
+<InputAssemblies Include="$(OutputPath)\Unosquare.Labs.EmbedIO.dll" />
+<InputAssemblies Include="$(OutputPath)\Unosquare.Swan.Lite.dll" />
     </ItemGroup>
     <!-- <CreateItem Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)'=='.dll'"> -->
     <!-- <Output ItemName="AssembliesToMerge" TaskParameter="Include" /> -->
