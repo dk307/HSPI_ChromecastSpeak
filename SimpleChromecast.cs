@@ -125,6 +125,7 @@ namespace Hspi.Chromecast
 
         private async Task LaunchDefaultApplication(ChromecastClient client, ChromecastStatus status, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             Trace.WriteLine(Invariant($"Launching default app on Chromecast {device.Name}"));
 
             var defaultApplication = GetDefaultApplication(status);
@@ -144,6 +145,7 @@ namespace Hspi.Chromecast
 
         private async Task<MediaStatus> LoadMedia(ChromecastClient client, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             Trace.WriteLine(Invariant($"Loading Media [{playUri}] in on Chromecast {device.Name}"));
 
             var metadata = new MediaMetadata()
@@ -164,6 +166,7 @@ namespace Hspi.Chromecast
             var mediaChannel = client.GetChannel<IMediaChannel>();
 
             mediaChannel.StatusChanged += MediaChannel_StatusChanged;
+            cancellationToken.ThrowIfCancellationRequested();
             var mediaStatus = await mediaChannel.LoadAsync(media, true).ConfigureAwait(false);
 
             Trace.WriteLine(Invariant($"Loaded Media [{playUri}] in on Chromecast {device.Name}"));
