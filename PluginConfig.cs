@@ -10,7 +10,6 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using Unosquare.Swan;
 using static System.FormattableString;
 
 namespace Hspi

@@ -18,12 +18,12 @@ namespace Hspi.Utils
                     }
                     return stb.ToString();
 
-                case SharpCaster.Exceptions.MediaLoadException mediaLoadException:
-                    return Invariant(
-                    $@"Failed to start to play media on {mediaLoadException.DeviceName} with Error:{mediaLoadException.FailureType}");
+                //case Sharpcaster.MediaLoadException mediaLoadException:
+                //    return Invariant(
+                //    $@"Failed to start to play media on {mediaLoadException.DeviceName} with Error:{mediaLoadException.FailureType}");
 
-                case SharpCaster.Exceptions.ChromecastDeviceException chromeDeviceException:
-                    return Invariant($"Failed to play on to {chromeDeviceException.DeviceName} with {chromeDeviceException.Message}");
+                //case Sharpcaster.Exceptions.ChromecastDeviceException chromeDeviceException:
+                //    return Invariant($"Failed to play on to {chromeDeviceException.DeviceName} with {chromeDeviceException.Message}");
 
                 default:
                     return ex.Message;
