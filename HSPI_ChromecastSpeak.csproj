@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Hspi</RootNamespace>
     <AssemblyName>HSPI_ChromecastSpeak</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -40,10 +40,12 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
-    <CodeAnalysisRuleSet>Rules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>
+    </CodeAnalysisRuleSet>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Prefer32Bit>false</Prefer32Bit>
+    <CodeAnalysisIgnoreGeneratedCode>false</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -53,10 +55,12 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
-    <CodeAnalysisRuleSet>Rules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>
+    </CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <CodeAnalysisIgnoreGeneratedCode>false</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>Hspi.Program</StartupObject>
@@ -78,10 +82,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>Rules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>
+    </CodeAnalysisRuleSet>
     <LangVersion>7.3</LangVersion>
+    <CodeAnalysisIgnoreGeneratedCode>false</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -90,36 +96,27 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x86</PlatformTarget>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>Rules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>
+    </CodeAnalysisRuleSet>
     <LangVersion>7.3</LangVersion>
+    <CodeAnalysisIgnoreGeneratedCode>false</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Runtime.Caching" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ServiceModel" />
-    <Reference Include="System.Speech" />
     <Reference Include="System.Web" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ChromecastDevice.cs" />
+    <Compile Include="Exceptions\ChromecastException.cs" />
     <Compile Include="Pages\ActionPage.cs" />
     <Compile Include="Pages\ChromecastCastAction.cs" />
     <Compile Include="Pages\ConfigPage.cs" />
     <Compile Include="Pages\PageHelper.cs" />
-    <Compile Include="SharpCaster\Exceptions\ApplicationLoadException.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\StopApplicationRequest.cs" />
     <Compile Include="Utils\EnumUtil.cs" />
     <Compile Include="Utils\ExceptionHelper.cs" />
     <Compile Include="Exceptions\VoiceGenerationException.cs" />
-    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HSPI.cs" />
     <Compile Include="HSTraceListener.cs" />
     <Compile Include="ILogger.cs" />
@@ -132,56 +129,6 @@
     <Compile Include="HSPIBase.cs" />
     <Compile Include="IPlugInAPI2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SharpCaster\Channels\ChromecastChannel.cs" />
-    <Compile Include="SharpCaster\Channels\ChromecastChannelWithRequestTracking.cs" />
-    <Compile Include="SharpCaster\Channels\ConnectionChannel.cs" />
-    <Compile Include="SharpCaster\Channels\HeartbeatChannel.cs" />
-    <Compile Include="SharpCaster\Channels\MediaChannel.cs" />
-    <Compile Include="SharpCaster\Channels\ReceiverChannel.cs" />
-    <Compile Include="SharpCaster\ChromeCastClient.cs" />
-    <Compile Include="SharpCaster\Exceptions\ChromecastDeviceException.cs" />
-    <Compile Include="SharpCaster\Exceptions\ChromecastException.cs" />
-    <Compile Include="SharpCaster\Exceptions\MediaLoadException.cs" />
-    <Compile Include="SharpCaster\Extensions\ByteArrayExtension.cs" />
-    <Compile Include="SharpCaster\JsonConverters\IdleReasonEnumConverter.cs" />
-    <Compile Include="SharpCaster\JsonConverters\MetadataTypeConverter.cs" />
-    <Compile Include="SharpCaster\JsonConverters\MetadataTypeEnumConverter.cs" />
-    <Compile Include="SharpCaster\JsonConverters\PlayerStateEnumConverter.cs" />
-    <Compile Include="SharpCaster\Models\CastMessage.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\CloseRequest.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\ConnectRequest.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\GetStatusRequest.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\LaunchRequest.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\LoadRequest.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\MediaData.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\MediaStatusRequest.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\PingRequest.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\Request.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\RequestIdProvider.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\RequestWithId.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\VolumeDataObject.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastRequests\VolumeRequest.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastStatus\ChromecastApplication.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastStatus\ChromecastStatus.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastStatus\ChromecastStatusResponse.cs" />
-    <Compile Include="SharpCaster\Models\ChromecastStatus\Namespace.cs" />
-    <Compile Include="SharpCaster\Models\Enums\MetadataTypeEnum.cs" />
-    <Compile Include="SharpCaster\Models\MediaStatus\ChromecastImage.cs" />
-    <Compile Include="SharpCaster\Models\MediaStatus\Item.cs" />
-    <Compile Include="SharpCaster\Models\MediaStatus\Media.cs" />
-    <Compile Include="SharpCaster\Models\MediaStatus\MediaStatus.cs" />
-    <Compile Include="SharpCaster\Models\MediaStatus\MediaStatusResponse.cs" />
-    <Compile Include="SharpCaster\Models\MediaStatus\Track.cs" />
-    <Compile Include="SharpCaster\Models\MessageFactory.cs" />
-    <Compile Include="SharpCaster\Models\Metadata\GenericMediaMetadata.cs" />
-    <Compile Include="SharpCaster\Models\Metadata\IMetadata.cs" />
-    <Compile Include="SharpCaster\Models\Metadata\MovieMediaMetadata.cs" />
-    <Compile Include="SharpCaster\Models\Metadata\MusicTrackMediaMetadata.cs" />
-    <Compile Include="SharpCaster\Models\Metadata\PhotoMediaMetadata.cs" />
-    <Compile Include="SharpCaster\Models\Metadata\TvShowMediaMetadata.cs" />
-    <Compile Include="SharpCaster\Models\Volume.cs" />
-    <Compile Include="SharpCaster\Services\ChromecastSocketService.cs" />
-    <Compile Include="SharpCaster\Services\ChromecastTcpClient.cs" />
     <Compile Include="SimpleChromecast.cs" />
     <Compile Include="Utils\TaskHelper.cs" />
     <Compile Include="Utils\ObjectSerialize.cs" />
@@ -197,7 +144,6 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="README.md" />
-    <None Include="Rules.ruleset" />
     <None Include="scripts\Win10Firewall.ps1" />
   </ItemGroup>
   <ItemGroup>
@@ -222,42 +168,53 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="EmbedIO">
-      <Version>2.1.1</Version>
+      <Version>2.2.7</Version>
     </PackageReference>
     <PackageReference Include="Fody">
-      <Version>3.3.5</Version>
+      <Version>6.8.0</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Google.Protobuf">
+      <Version>3.24.3</Version>
     </PackageReference>
     <PackageReference Include="homeseer">
       <Version>1.2.8</Version>
     </PackageReference>
     <PackageReference Include="ILMerge">
-      <Version>3.0.21</Version>
+      <Version>3.0.41</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
+      <Version>3.3.4</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>12.0.1</Version>
+      <Version>13.0.3</Version>
     </PackageReference>
     <PackageReference Include="Nito.AsyncEx.Coordination">
-      <Version>5.0.0-pre-05</Version>
+      <Version>5.1.2</Version>
     </PackageReference>
     <PackageReference Include="Nito.AsyncEx.Tasks">
-      <Version>5.0.0-pre-05</Version>
+      <Version>5.1.2</Version>
     </PackageReference>
     <PackageReference Include="NullGuard.Fody">
-      <Version>1.8.5</Version>
+      <Version>3.1.1</Version>
     </PackageReference>
-    <PackageReference Include="protobuf-net">
-      <Version>2.4.0</Version>
+    <PackageReference Include="Sharpcaster">
+      <Version>1.0.8</Version>
     </PackageReference>
     <PackageReference Include="System.Collections.Immutable">
-      <Version>1.6.0-preview.18571.3</Version>
+      <Version>7.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Runtime.Caching">
+      <Version>7.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Speech">
+      <Version>7.0.0</Version>
     </PackageReference>
     <PackageReference Include="TagLib.Portable">
-      <Version>1.0.4</Version>
-    </PackageReference>
-    <PackageReference Include="Unosquare.Swan.Lite">
-      <Version>0.38.1</Version>
+      <Version>1.3.1</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -277,16 +234,32 @@
   <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release' ">
     <ItemGroup>
       <InputAssemblies Include="$(OutputPath)\HSPI_ChromecastSpeak.exe" />
-      <InputAssemblies Include="$(OutputPath)\Newtonsoft.Json.dll" />
-      <InputAssemblies Include="$(OutputPath)\protobuf-net.dll" />
-      <InputAssemblies Include="$(OutputPath)\TagLib.Portable.dll" />
-      <InputAssemblies Include="$(OutputPath)\Unosquare.Labs.EmbedIO.dll" />
-      <InputAssemblies Include="$(OutputPath)\Unosquare.Swan.Lite.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Coordination.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Tasks.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.Collections.Deque.dll" />
-      <InputAssemblies Include="$(OutputPath)\Nito.Disposables.dll" />
-      <InputAssemblies Include="$(OutputPath)\System.Collections.Immutable.dll" />
+<InputAssemblies Include="$(OutputPath)\Google.Protobuf.dll" />
+<InputAssemblies Include="$(OutputPath)\Microsoft.Bcl.AsyncInterfaces.dll" />
+<InputAssemblies Include="$(OutputPath)\Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+<InputAssemblies Include="$(OutputPath)\Microsoft.Extensions.DependencyInjection.dll" />
+<InputAssemblies Include="$(OutputPath)\Microsoft.Extensions.Logging.Abstractions.dll" />
+<InputAssemblies Include="$(OutputPath)\Newtonsoft.Json.dll" />
+<InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Coordination.dll" />
+<InputAssemblies Include="$(OutputPath)\Nito.AsyncEx.Tasks.dll" />
+<InputAssemblies Include="$(OutputPath)\Nito.Collections.Deque.dll" />
+<InputAssemblies Include="$(OutputPath)\Nito.Disposables.dll" />
+<InputAssemblies Include="$(OutputPath)\Sharpcaster.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Buffers.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Collections.Immutable.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Configuration.ConfigurationManager.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Diagnostics.DiagnosticSource.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Memory.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Numerics.Vectors.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Runtime.CompilerServices.Unsafe.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Security.AccessControl.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Security.Permissions.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Security.Principal.Windows.dll" />
+<InputAssemblies Include="$(OutputPath)\System.Threading.Tasks.Extensions.dll" />
+<InputAssemblies Include="$(OutputPath)\TagLib.Portable.dll" />
+<InputAssemblies Include="$(OutputPath)\Tmds.MDns.dll" />
+<InputAssemblies Include="$(OutputPath)\Unosquare.Labs.EmbedIO.dll" />
+<InputAssemblies Include="$(OutputPath)\Unosquare.Swan.Lite.dll" />
     </ItemGroup>
     <!-- <CreateItem Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)'=='.dll'"> -->
     <!-- <Output ItemName="AssembliesToMerge" TaskParameter="Include" /> -->

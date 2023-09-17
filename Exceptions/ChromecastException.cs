@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using Hspi.Exceptions;
 
-namespace SharpCaster.Exceptions
+namespace Hspi.Chromecast
 {
     [Serializable]
-    public class ChromecastException : Exception
+    internal class ChromecastException : HspiException
     {
         public ChromecastException()
         {
