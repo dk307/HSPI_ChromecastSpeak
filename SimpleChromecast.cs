@@ -60,7 +60,7 @@ namespace Hspi.Chromecast
 
             if (loadedMediaStatus == null)
             {
-                throw new MediaLoadException(device.DeviceIP.ToString(), "Failed to load");
+                throw new ChromecastException("Failed to load media in chromecast");
             }
 
             if (waitforCompletion)
@@ -133,7 +133,7 @@ namespace Hspi.Chromecast
 
             if (defaultApplication == null)
             {
-                throw new ChromecastDeviceException(device.Name, "No default app found inspite of launching it");
+                throw new ChromecastException("No default app found inspite of launching it");
             }
 
             await client.GetChannel<IConnectionChannel>().ConnectAsync(defaultApplication.TransportId)
@@ -191,7 +191,7 @@ namespace Hspi.Chromecast
 
             if (completedTask == disconnectedTask)
             {
-                throw new ChromecastDeviceException(device.Name, "Device got disconnected");
+                throw new ChromecastException("Device got disconnected while playing");
             }
             token.ThrowIfCancellationRequested();
         }

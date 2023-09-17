@@ -105,9 +105,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ChromecastDevice.cs" />
-    <Compile Include="Exceptions\ChromecastDeviceException.cs" />
     <Compile Include="Exceptions\ChromecastException.cs" />
-    <Compile Include="MediaLoadException.cs" />
     <Compile Include="Pages\ActionPage.cs" />
     <Compile Include="Pages\ChromecastCastAction.cs" />
     <Compile Include="Pages\ConfigPage.cs" />
